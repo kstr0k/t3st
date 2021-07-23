@@ -7,13 +7,14 @@ k9s0ke_t3st_slurp_cmd() {
   k9s0ke_t3st_out=$(
     if [ $# -gt 0 ]; then "$@"; else cat; fi
     rc=$?; echo EOF; exit $rc
-  ); local rc=$?; k9s0ke_t3st_out=${k9s0ke_t3st_out%"${k9s0ke_t3st_nl}"EOF}
+  ); local rc=$?
+  k9s0ke_t3st_out=${k9s0ke_t3st_out%EOF}
   return "$rc"
 }
 
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
-  local k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out=
-  # keywords: rc, out, spec
+  local k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_pp=
+  # keywords: rc, out, spec, nl, pp
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
     local "k9s0ke_t3st_arg_$1"; shift
@@ -22,10 +23,16 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     ''|*' '*) ;;  # '' will ignore $rc
     *) k9s0ke_t3st_arg_rc="-eq $k9s0ke_t3st_arg_rc" ;;
   esac
+  ! $k9s0ke_t3st_arg_nl || k9s0ke_t3st_arg_out=$k9s0ke_t3st_arg_out$k9s0ke_t3st_nl
 
-  k9s0ke_t3st_slurp_cmd "$@"; local rc=$?
-  
-  [ $rc ${k9s0ke_t3st_arg_rc:-} ] && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out:-}" ] ||  printf 'not '
+  k9s0ke_t3st_slurp_cmd "$@"; local rc=$?  # DON'T split, local has its own rc
+  local out; out=$k9s0ke_t3st_out
+  if [ "$k9s0ke_t3st_arg_pp" ]; then
+    out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
+      k9s0ke_t3st_tmp $rc "$out"; rc=$?; echo EOF; exit $rc)
+    rc=$?; out=${out%EOF}
+  fi
+  [ $rc ${k9s0ke_t3st_arg_rc:-} ] && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] ||  printf 'not '
   printf 'ok%s\n'  "${k9s0ke_t3st_arg_spec:+ "$k9s0ke_t3st_arg_spec"}"
 }
 
