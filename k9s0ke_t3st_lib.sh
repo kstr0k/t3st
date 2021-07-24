@@ -2,6 +2,21 @@
 
 k9s0ke_t3st_nl='
 '
+k9s0ke_t3st_ch_newline=$k9s0ke_t3st_nl
+k9s0ke_t3st_ch_tab=$(printf \\t)
+k9s0ke_t3st_ch_apos="'"
+k9s0ke_t3st_ch_amp='&'
+k9s0ke_t3st_ch_bsol='\'
+k9s0ke_t3st_ch_gt='>'
+k9s0ke_t3st_ch_lt='<'
+k9s0ke_t3st_ch_vert='|'
+k9s0ke_t3st_ch_grave='`'
+k9s0ke_t3st_ch_quest='?'
+k9s0ke_t3st_ch_star='*'
+k9s0ke_t3st_ch_dollar='$'
+k9s0ke_t3st_ch_excl='!'
+k9s0ke_t3st_ch_semi=';'
+k9s0ke_t3st_ch_num='#'
 
 k9s0ke_t3st_slurp_cmd() {
   k9s0ke_t3st_out=$(
