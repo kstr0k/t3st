@@ -12,8 +12,12 @@ k9s0ke_t3st_slurp_cmd() {
   return "$rc"
 }
 
+k9s0ke_t3st_tmpfile() {
+  :
+}
+
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
-  local k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_pp=
+  local k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null
   # keywords: rc, out, spec, nl, pp
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
@@ -25,7 +29,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   esac
   ! $k9s0ke_t3st_arg_nl || k9s0ke_t3st_arg_out=$k9s0ke_t3st_arg_out$k9s0ke_t3st_nl
 
-  k9s0ke_t3st_slurp_cmd "$@"; local rc=$?  # DON'T split, local has its own rc
+  k9s0ke_t3st_slurp_cmd "$@" <"$k9s0ke_t3st_arg_infile"; local rc=$?  # DON'T split, local has its own rc
   local out; out=$k9s0ke_t3st_out
   if [ "$k9s0ke_t3st_arg_pp" ]; then
     out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
