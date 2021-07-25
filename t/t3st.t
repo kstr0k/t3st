@@ -5,6 +5,14 @@ set -u
 
 k9s0ke_t3st_enter
 
+# minimal test; defaults: rc=0 out='' nl=true
+k9s0ke_t3st_one -- \
+echo
+k9s0ke_t3st_one nl=false -- \
+true
+k9s0ke_t3st_one spec='# TODO : fails on both output (\n) & $? but TODO ignores result' -- \
+false
+
 k9s0ke_t3st_one rc=2 out='X' -- \
 eval 'echo X; exit 2'
 k9s0ke_t3st_one rc=2 out='X' nl=false -- \
