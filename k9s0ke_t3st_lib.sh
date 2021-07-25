@@ -96,6 +96,6 @@ k9s0ke_t3st_enter () {
   fi
 }
 k9s0ke_t3st_leave() {
-  echo 1..$k9s0ke_t3st_cnt
+  echo "${1:-1..$k9s0ke_t3st_cnt}"
 }
 
