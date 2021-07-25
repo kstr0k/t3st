@@ -18,13 +18,13 @@ k9s0ke_t3st_ch_excl='!'
 k9s0ke_t3st_ch_semi=';'
 k9s0ke_t3st_ch_num='#'
 
-k9s0ke_t3st_slurp_cmd() {
-  k9s0ke_t3st_out=$(
-    if [ $# -gt 0 ]; then ("$@"); else cat; fi
-    rc=$?; echo EOF; exit $rc
-  ); local rc=$?
-  k9s0ke_t3st_out=${k9s0ke_t3st_out%EOF}
-  return "$rc"
+k9s0ke_t3st_slurp_cmd() (
+  if [ $# -gt 0 ]; then ("$@"); else cat; fi
+  echo "$k9s0ke_t3st_nl$?"
+)
+k9s0ke_t3st_slurp_split() {  # args: 1=slurp 2=outvar 3=rcvar
+  eval "$2=\${1%\"$k9s0ke_t3st_nl\"*}"
+  eval "$3=\${1##*\"$k9s0ke_t3st_nl\"}"
 }
 
 k9s0ke_t3st_tmpfile() {
@@ -50,6 +50,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   esac
   ! $k9s0ke_t3st_arg_nl || k9s0ke_t3st_arg_out=$k9s0ke_t3st_arg_out$k9s0ke_t3st_nl
 
+  local k9s0ke_t3st_out; k9s0ke_t3st_out=$(
   case "$k9s0ke_t3st_arg_in" in
     '')
       if [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then
@@ -62,13 +63,13 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
 $k9s0ke_t3st_arg_in
 EOF
     ;;
-  esac
-  local rc=$?  # DON'T split, local has its own rc
-  local out; out=$k9s0ke_t3st_out
+  esac)
+  local out rc
+  k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
   if [ "$k9s0ke_t3st_arg_pp" ]; then
-    out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
-      k9s0ke_t3st_tmp $rc "$out"; rc=$?; echo EOF; exit $rc)
-    rc=$?; out=${out%EOF}
+    k9s0ke_t3st_out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
+      k9s0ke_t3st_slurp_cmd k9s0ke_t3st_tmp "$out" "$rc")
+    k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
   fi
   local ok; ok=true
   [ $rc ${k9s0ke_t3st_arg_rc:-} ] && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
@@ -99,7 +100,11 @@ k9s0ke_t3st_me() {
   fi
   (
   if [ -r "$0".in ]; then exec <"$0".in; else exec </dev/null; fi
-  ! [ -r "$0".out ] || k9s0ke_t3st_slurp_cmd <"$0".out
+  local k9s0ke_t3st_out=
+  if [ -r "$0".out ]; then
+    k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd <"$0".out)
+    k9s0ke_t3st_out=${k9s0ke_t3st_out%$k9s0ke_t3st_nl*}
+  fi
   k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" nl=false cnt=false infile=- -- "$@"
   )
   k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
@@ -107,10 +112,7 @@ k9s0ke_t3st_me() {
 
 k9s0ke_t3st_enter () {
   k9s0ke_t3st_cnt=0
-  return 0  # plan now at end
-  if [ $# -eq 0 ]; then
-    set -- "$(sed -ne '/^[[:space:]]*k9s0ke_t3st_one/p' < "$0" | wc -l)"
-  fi
+  return 0  # plan printed at end
 }
 k9s0ke_t3st_leave() {
   echo "${1:-1..$k9s0ke_t3st_cnt}"
