@@ -33,7 +33,7 @@ k9s0ke_t3st_tmpfile() {
 
 k9s0ke_t3st_bailout() {
   echo 'Bail out!' "${*}"
-  k9s0ke_t3st_end
+  k9s0ke_t3st_leave
   exit 1
 }
 
@@ -89,8 +89,20 @@ EOF
 }
 
 k9s0ke_t3st_me() {
+  if [ $# -eq 0 ]; then
+    if test -r "$0".exec; then
+      set -- "$0".exec
+      test -x "$1" || set -- sh "$@"
+    else
+      k9s0ke_t3st_bailout 'no command and no .exec file found'
+    fi
+  fi
+  (
+  if [ -r "$0".in ]; then exec <"$0".in; else exec </dev/null; fi
   ! [ -r "$0".out ] || k9s0ke_t3st_slurp_cmd <"$0".out
-  k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" -- "$@"
+  k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" nl=false cnt=false infile=- -- "$@"
+  )
+  k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
 
 k9s0ke_t3st_enter () {
