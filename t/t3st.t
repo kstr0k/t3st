@@ -39,6 +39,8 @@ printf XX | k9s0ke_t3st_one out=XX nl=false infile=- cnt=false -- \
   cat
 k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 
+k9s0ke_t3st_one rc=1 nl=false errexit=true -- \
+  eval 'false; echo XX'
 
 k9s0ke_t3st_one out=Done -- \
   echo Done
