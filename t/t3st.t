@@ -40,6 +40,11 @@ k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 k9s0ke_t3st_one rc=1 nl=false errexit=true -- \
   eval 'false; echo XX'
 
+k9s0ke_t3st_one rc='-ne 0' nl=false spec='# TODO : only with global "set -e" hook' -- \
+  eval 'false; echo XX'
+k9s0ke_t3st_one rc=0 out=XX spec='# TODO : only without global "set -e" hook' -- \
+  eval 'false; echo XX'
+
 k9s0ke_t3st_one out=Done -- \
   echo Done
 
