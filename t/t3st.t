@@ -3,7 +3,7 @@ set -u
 . "${0%/*}"/../k9s0ke_t3st_lib.sh
 
 
-k9s0ke_t3st_begin
+k9s0ke_t3st_enter
 
 k9s0ke_t3st_one rc=2 out='X' -- \
 eval '(echo X; exit 2)'
@@ -19,4 +19,4 @@ cat
 k9s0ke_t3st_one in="$k9s0ke_t3st_nl" out="$k9s0ke_t3st_nl" -- \
 cat
 
-k9s0ke_t3st_end
+k9s0ke_t3st_leave
