@@ -38,6 +38,7 @@ k9s0ke_t3st_bailout() {
 }
 
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
+  k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
   local k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_in=
   # keywords: rc, out, spec, nl, pp
   while [ $# -gt 0 ]; do
@@ -65,8 +66,10 @@ EOF
       k9s0ke_t3st_tmp $rc "$out"; rc=$?; echo EOF; exit $rc)
     rc=$?; out=${out%EOF}
   fi
-  [ $rc ${k9s0ke_t3st_arg_rc:-} ] && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] ||  printf 'not '
-  printf 'ok%s\n'  "${k9s0ke_t3st_arg_spec:+ "$k9s0ke_t3st_arg_spec"}"
+  local ok; ok=true
+  [ $rc ${k9s0ke_t3st_arg_rc:-} ] && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
+  $ok || printf 'not '
+  printf 'ok%s\n'  " $k9s0ke_t3st_cnt ${k9s0ke_t3st_arg_spec:+"$k9s0ke_t3st_arg_spec"}"
 }
 
 k9s0ke_t3st_me() {
@@ -74,13 +77,14 @@ k9s0ke_t3st_me() {
   k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" -- "$@"
 }
 
-k9s0ke_t3st_begin () {
+k9s0ke_t3st_enter () {
+  k9s0ke_t3st_cnt=0
+  return 0  # plan now at end
   if [ $# -eq 0 ]; then
     set -- "$(sed -ne '/^[[:space:]]*k9s0ke_t3st_one/p' < "$0" | wc -l)"
   fi
-  echo 1..$1
 }
-k9s0ke_t3st_end() {
-  :
+k9s0ke_t3st_leave() {
+  echo 1..$k9s0ke_t3st_cnt
 }
 
