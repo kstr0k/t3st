@@ -52,8 +52,13 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   ! $k9s0ke_t3st_arg_nl || k9s0ke_t3st_arg_out=$k9s0ke_t3st_arg_out$k9s0ke_t3st_nl
 
   case "$k9s0ke_t3st_arg_in" in
-    '') k9s0ke_t3st_slurp_cmd "$@" <"$k9s0ke_t3st_arg_infile" ;;
-    *) $k9s0ke_t3st_arg_nl || { k9s0ke_t3st_bailout 'in= with nl=false not supported'; return 1; }
+    '')
+      if [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then
+        k9s0ke_t3st_slurp_cmd "$@" <"$k9s0ke_t3st_arg_infile"
+      else
+        k9s0ke_t3st_slurp_cmd "$@"
+      fi ;;
+    *) $k9s0ke_t3st_arg_nl || { k9s0ke_t3st_bailout 'in=... nl=false not supported'; return 1; }
     k9s0ke_t3st_slurp_cmd "$@" <<EOF
 $k9s0ke_t3st_arg_in
 EOF
