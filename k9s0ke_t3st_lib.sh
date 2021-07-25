@@ -39,7 +39,7 @@ k9s0ke_t3st_bailout() {
 
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
-  local k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_in=
+  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_in=
   # keywords: rc, out, spec, nl, pp
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
@@ -70,6 +70,17 @@ EOF
   [ $rc ${k9s0ke_t3st_arg_rc:-} ] && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
   $ok || printf 'not '
   printf 'ok%s\n'  " $k9s0ke_t3st_cnt ${k9s0ke_t3st_arg_spec:+"$k9s0ke_t3st_arg_spec"}"
+  if $k9s0ke_t3st_arg_notok_diff && ! $ok; then
+    local _pl
+    if _pl=$(which perl 2>/dev/null); then
+      eval set -- "$_pl"' -wE '\''use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; print Dumper( $ARGV[0] )'\'' --'
+    else eval set -- 'printf %s\\n'
+    fi
+    printf '%s%6s out=' '# Expect: rc=' "$k9s0ke_t3st_arg_rc"
+    "$@" "$k9s0ke_t3st_arg_out" | tr \\n '|'; echo
+    printf '%s%6s out=' '# Actual: rc=' "$rc"
+    "$@" "$out"                 | tr \\n '|'; echo
+  fi
 }
 
 k9s0ke_t3st_me() {
