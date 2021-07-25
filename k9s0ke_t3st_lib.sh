@@ -82,7 +82,7 @@ EOF
   local ok; ok=true
   [ $rc ${k9s0ke_t3st_arg_rc:-} ] && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
   $ok || printf 'not '
-  printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) ${k9s0ke_t3st_arg_spec:+"$k9s0ke_t3st_arg_spec"}"
+  printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) $k9s0ke_t3st_arg_spec"
   if $k9s0ke_t3st_arg_notok_diff && ! $ok; then
     local _pl
     if _pl=$(which perl 2>/dev/null); then
@@ -102,6 +102,7 @@ k9s0ke_t3st_me() {
     if test -r "$0".exec; then
       set -- "$0".exec
       test -x "$1" || set -- sh "$@"
+      set -- -- "$@"
     else
       k9s0ke_t3st_bailout 'no command and no .exec file found'
     fi
@@ -113,7 +114,7 @@ k9s0ke_t3st_me() {
     k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd <"$0".out)
     k9s0ke_t3st_out=${k9s0ke_t3st_out%$k9s0ke_t3st_nl*}
   fi
-  k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" nl=false cnt=false infile=- -- "$@"
+  k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" nl=false cnt=false infile=- "$@"
   )
   k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
