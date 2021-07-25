@@ -20,7 +20,7 @@ k9s0ke_t3st_ch_num='#'
 
 k9s0ke_t3st_slurp_cmd() {
   k9s0ke_t3st_out=$(
-    if [ $# -gt 0 ]; then "$@"; else cat; fi
+    if [ $# -gt 0 ]; then ("$@"); else cat; fi
     rc=$?; echo EOF; exit $rc
   ); local rc=$?
   k9s0ke_t3st_out=${k9s0ke_t3st_out%EOF}
