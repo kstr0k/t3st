@@ -55,8 +55,8 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     *) k9s0ke_t3st_arg_rc="-eq $k9s0ke_t3st_arg_rc" ;;
   esac
   ! $k9s0ke_t3st_arg_nl || k9s0ke_t3st_arg_out=$k9s0ke_t3st_arg_out$k9s0ke_t3st_nl
-  ! $k9s0ke_t3st_arg_errexit ||
-    k9s0ke_t3st_hook_test_pre="set -e$k9s0ke_t3st_nl${k9s0ke_t3st_hook_test_pre:-}"
+  ! $k9s0ke_t3st_arg_errexit ||  # TODO: local initialized from global it shadows
+    local k9s0ke_t3st_hook_test_pre="set -e$k9s0ke_t3st_nl${k9s0ke_t3st_hook_test_pre:-}"
 
   local k9s0ke_t3st_out; k9s0ke_t3st_out=$(
   case "$k9s0ke_t3st_arg_in" in
