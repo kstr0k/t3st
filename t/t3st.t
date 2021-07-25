@@ -13,6 +13,9 @@ true
 k9s0ke_t3st_one spec='# TODO : fails on both output (\n) & $? but TODO ignores result' -- \
 false
 
+k9s0ke_t3st_me eval 'echo Hello world && false'
+k9s0ke_t3st_me
+
 k9s0ke_t3st_one rc=2 out='X' -- \
 eval 'echo X; exit 2'
 k9s0ke_t3st_one rc=2 out='X' nl=false -- \
