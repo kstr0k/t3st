@@ -19,12 +19,15 @@ k9s0ke_t3st_ch_semi=';'
 k9s0ke_t3st_ch_num='#'
 
 # runs "$@", copies output and appends \n$?
-# calls any set hooks
 k9s0ke_t3st_slurp_cmd() {
-  if [ $# -gt 0 ]; then
-    ([ -z "${k9s0ke_t3st_hook_test_pre:-}" ] || eval "$k9s0ke_t3st_hook_test_pre"; "$@")
-  else cat
-  fi
+  [ $# -gt 0 ] || { unset Error; : "${Error?internal: slurp}"; }
+  [ $# -gt 1 ] || set -- "$@" cat
+  # anything past "$@" would possibly not run (e.g. if $1 contains set -e)
+  # thus it's impossible to avoid \n-trimming here with $()
+  # OTOH $1 eval must be in subshell (set -e again)
+  # result: impossible to avoid double subshell with capturing
+  # TODO: redirecting output to file would work though
+  (if [ "$1" ]; then eval "$1"; fi; shift; "$@")
   echo "$k9s0ke_t3st_nl$?"
 }
 # splits _slurp_cmd() output into actual output and $?
@@ -44,7 +47,7 @@ k9s0ke_t3st_bailout() {
 }
 
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
-  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_in= k9s0ke_t3st_arg_errexit=false
+  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_in= k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=false
   # keywords: rc, out, spec, nl, pp
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
@@ -55,28 +58,27 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     *) k9s0ke_t3st_arg_rc="-eq $k9s0ke_t3st_arg_rc" ;;
   esac
   ! $k9s0ke_t3st_arg_nl || k9s0ke_t3st_arg_out=$k9s0ke_t3st_arg_out$k9s0ke_t3st_nl
-  ! $k9s0ke_t3st_arg_errexit ||  # TODO: local initialized from global it shadows
-    local k9s0ke_t3st_hook_test_pre="set -e$k9s0ke_t3st_nl${k9s0ke_t3st_hook_test_pre:-}"
-
-  local k9s0ke_t3st_out; k9s0ke_t3st_out=$(
-  case "$k9s0ke_t3st_arg_in" in
-    '')
-      if [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then
-        k9s0ke_t3st_slurp_cmd "$@" <"$k9s0ke_t3st_arg_infile"
-      else
-        k9s0ke_t3st_slurp_cmd "$@"
-      fi ;;
-    *) $k9s0ke_t3st_arg_nl || { k9s0ke_t3st_bailout 'in=... nl=false not supported'; return 1; }
-    k9s0ke_t3st_slurp_cmd "$@" <<EOF
+  ! $k9s0ke_t3st_arg_errexit ||
+    k9s0ke_t3st_arg_hook_test_pre="set -e$k9s0ke_t3st_nl${k9s0ke_t3st_arg_hook_test_pre:-}"
+  if [ "$k9s0ke_t3st_arg_in" ]; then  # in= overrides infile=
+    if ! $k9s0ke_t3st_arg_nl; then
+      k9s0ke_t3st_bailout 'in=... nl=false not supported'; return 1
+    fi
+    k9s0ke_t3st_arg_hook_test_pre='exec <<EOF
 $k9s0ke_t3st_arg_in
 EOF
-    ;;
-  esac)
+'${k9s0ke_t3st_arg_hook_test_pre:-}
+  elif [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then
+    k9s0ke_t3st_arg_hook_test_pre='exec <"$k9s0ke_t3st_arg_infile"
+'${k9s0ke_t3st_arg_hook_test_pre:-}
+  fi
+
+  local k9s0ke_t3st_out; k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd "$k9s0ke_t3st_arg_hook_test_pre" "$@")
   local out rc
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
   if [ "$k9s0ke_t3st_arg_pp" ]; then
     k9s0ke_t3st_out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
-      k9s0ke_t3st_slurp_cmd k9s0ke_t3st_tmp "$out" "$rc")
+      k9s0ke_t3st_slurp_cmd '' k9s0ke_t3st_tmp "$out" "$rc")
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
   fi
   local ok; ok=true
@@ -111,7 +113,7 @@ k9s0ke_t3st_me() {
   if [ -r "$0".in ]; then exec <"$0".in; else exec </dev/null; fi
   local k9s0ke_t3st_out=
   if [ -r "$0".out ]; then
-    k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd <"$0".out)
+    k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd '' <"$0".out)
     k9s0ke_t3st_out=${k9s0ke_t3st_out%$k9s0ke_t3st_nl*}
   fi
   k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" nl=false cnt=false infile=- "$@"
