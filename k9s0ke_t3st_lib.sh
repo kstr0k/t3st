@@ -19,7 +19,7 @@ k9s0ke_t3st_ch_semi=';'
 k9s0ke_t3st_ch_num='#'
 
 # runs "$@", copies output and appends \n$?
-k9s0ke_t3st_slurp_cmd() {
+k9s0ke_t3st_slurp_exec() {  # args: 1=prelude 2...=command
   [ $# -gt 0 ] || { unset Error; : "${Error?internal: slurp}"; }
   [ $# -gt 1 ] || set -- "$@" cat
   # anything past "$@" would possibly not run (e.g. if $1 contains set -e)
@@ -30,10 +30,10 @@ k9s0ke_t3st_slurp_cmd() {
   (if [ "$1" ]; then eval "$1"; fi; shift; "$@")
   echo "$k9s0ke_t3st_nl$?"
 }
-# splits _slurp_cmd() output into actual output and $?
+# splits _slurp_exec() output into actual output and $?
 k9s0ke_t3st_slurp_split() {  # args: 1=slurp 2=outvar 3=rcvar
-  [ -z "$2" ] || eval "$2=\${1%\"$k9s0ke_t3st_nl\"*}"
-  [ -z "$3" ] || eval "$3=\${1##*\"$k9s0ke_t3st_nl\"}"
+  [ -z "${2:-}" ] || eval "$2=\${1%\"$k9s0ke_t3st_nl\"*}"
+  [ -z "${3:-}" ] || eval "$3=\${1##*\"$k9s0ke_t3st_nl\"}"
 }
 
 k9s0ke_t3st_tmpfile() {
@@ -61,7 +61,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   ! $k9s0ke_t3st_arg_errexit ||
     k9s0ke_t3st_arg_hook_test_pre="set -e$k9s0ke_t3st_nl${k9s0ke_t3st_arg_hook_test_pre:-}"
   if [ "$k9s0ke_t3st_arg_outfile" ]; then  # outfile= overrides out=
-    k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd '' <"$k9s0ke_t3st_arg_outfile") ||
+    k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec '' <"$k9s0ke_t3st_arg_outfile") ||
       k9s0ke_t3st_bailout "not found: outfile $k9s0ke_t3st_arg_outfile"
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_arg_out ''
   fi
@@ -78,12 +78,12 @@ EOF
 '${k9s0ke_t3st_arg_hook_test_pre:-}
   fi
 
-  local k9s0ke_t3st_out; k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd "$k9s0ke_t3st_arg_hook_test_pre" "$@")
+  local k9s0ke_t3st_out; k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@")
   local out rc
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
   if [ "$k9s0ke_t3st_arg_pp" ]; then
     k9s0ke_t3st_out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
-      k9s0ke_t3st_slurp_cmd '' k9s0ke_t3st_tmp "$out" "$rc")
+      k9s0ke_t3st_slurp_exec '' k9s0ke_t3st_tmp "$out" "$rc")
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
   fi
   local ok; ok=true
