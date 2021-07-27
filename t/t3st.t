@@ -1,9 +1,14 @@
 #!/bin/sh
 set -u
+[ $# -gt 0 ] || set -- --  # posh workaround
 . "${0%/*}"/../k9s0ke_t3st_lib.sh
 
 # convenient, but watch namespace pollution
 TTT() { k9s0ke_t3st_one "$@"; }
+
+# make script usable as library -- not required in general
+# we use this in t3st-e.t
+run_tests() {
 
 k9s0ke_t3st_enter
 
@@ -45,7 +50,7 @@ TTT out=5 infile=- cnt=false spec='infile=- pipe' \
   -- eval 'set -- "$(cat)"; echo ${#1}'
 k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 
-TTT rc=1 nl=false errexit=true spec=errexit \
+TTT rc=1 nl=false errexit=true spec=errexit spec='# TODO : posh: set -e ignored in eval' \
   -- eval 'false; echo XX'
 
 TTT rc='-ne 0' nl=false spec='# TODO : only with global "set -e" hook' \
@@ -57,3 +62,6 @@ TTT out=Done spec=Done \
   -- echo Done
 
 k9s0ke_t3st_leave
+
+}
+if [ "${1:-}" != --no-run ]; then run_tests "$@"; fi
