@@ -2,18 +2,23 @@
 
 ## _Lightweight shell TAP testing library_
 
-`t3st` is a shell library to produce [TAP output](https://testanything.org/tap-specification.html). Use it to test shell functions, or any commands / scripts. It requires only a **POSIX shell** (but works under bash / dash / busybox / mksh / BSD sh / others) and a TAP framework (**`prove`** comes with any system perl). It supports testing both command **outputs** and **exit codes**, `errexit` ([`set -e`](#errexit)) and `set -u` tests, **pipes** ([redirects](#redirects)), implicit / explicit **final newline** handling and TAP directives. The defaults make tests easy to write without sacrificing correctness or flexibility. The test API completely avoids **namespace pollution** which guarantees complete interoperability with any source.
-
 **TLDR: [t3st.t](t/t3st.t)** tests the framework and serves as an example.
+
+`t3st` is a shell library to produce [TAP output](https://testanything.org/tap-specification.html). Use it to test shell functions, or any commands / scripts. It requires only a **POSIX shell** (but works under bash / dash / busybox / mksh / zsh / BSD sh / others) and a TAP framework (**`prove`** comes with any system perl). It supports testing both command **outputs** and **exit codes**, `errexit` ([`set -e`](#errexit)) and `set -u` tests, **pipes** ([redirects](#redirects)), implicit / explicit **final newline** handling and TAP directives. The defaults make tests easy to write without sacrificing correctness or flexibility. The test API completely avoids **namespace pollution** which guarantees complete interoperability with any source.
+
+*Notes*
+- development takes place at [GitLab `t3st`](https://gitlab.com/kstr0k/t3st) but you can also report issues at the [GitHub `t3st` mirror](https://github.com/kstr0k/t3st).
+- watch the [CHANGELOG](CHANGELOG.md) if using the `git` version &mdash; there are no API guarantees at this stage
 
 ## Highlights
 
 - [Usage](#usage)
-  - [errexit](#errexit)
+  - [errexit & nounset](#errexit)
 - [Test function](#test-function)
   - [Redirects](#redirects)
 - [Extras](#extras)
 - [File-based (`_me`) tests](#file-based-_me-tests)
+- [Supported shells](#supported-shells)
 - [Copyright & license](#copyright)
 
 ## Usage
@@ -63,9 +68,9 @@ That is: source [`k9s0ke_t3st_lib.sh`](k9s0ke_t3st_lib.sh) (along with any teste
 - use `errexit=true` in individual `..._one` / `..._me` calls, OR
 - `set -e` inside the tested code (or inside a `-- eval` argument).
 
-To run tests with both `set -e` and `set +e`, create a `...-e.t` file which adds a global `set -e` hook, then sources the base `.t` file. See [t/t3st-e.t](t/t3st-e.t) for a more general solution of making scripts usable as both commands and libraries.
+To run tests with **both `set -e` and `set +e`**, create a `...-e.t` file which adds a global `set -e` hook, then sources the base `.t` file. [t/t3st-e.t](t/t3st-e.t) implements a more general version of this for making scripts usable as both commands and libraries.
 
-`set -u` does not affect operation &mdash; set it either way globally, or use `nounset=` parameters.
+`set -u` does not affect operation &mdash; set it either way globally and/or use `nounset=` parameters.
 
 ## Test function
 
@@ -131,6 +136,22 @@ The expected output `.out` is read in a shell variable, so it still can't contai
 ```
 k9s0ke_t3st_me
 ```
+
+## Supported shells
+
+While the library itself only uses POSIX shell code, you may wish to test scripts that require `bash` (or others). This is supported &mdash; the library code will run under a variety of shells. Use an appropriate shebang in your `.t` file, or pass `prove` a `-e` argument. For example, the following has been used to test `t3st` itself with no errors:
+
+```
+for shell in dash bash 'busybox sh' mksh yash zsh # posh
+  do prove -e "$shell"
+done
+```
+
+### Individual shell notes
+
+- zsh: the only major difference from POSIX seems to be the `shwordsplit` (`setopt -y`) option being turned off by default. `t3st` avoids this usage and thus needs no workarounds. However zsh has not been fully tested and there may be other problems.
+- `posh` only fails the `errexit` test, and only because it doesn't honor `set -e` inside eval.
+- FreeBSD sh: works, but has exhibited nested parameter expansion bugs in the past (`t3st` does not currently use this)
 
 ## See also
 
