@@ -26,7 +26,6 @@ k9s0ke_t3st_slurp_exec() {  # args: 1=prelude 2...=command
   # thus it's impossible to avoid \n-trimming here with $()
   # OTOH $1 eval must be in subshell (set -e again)
   # result: impossible to avoid double subshell with capturing
-  # TODO: redirecting output to file would work though
   (if [ "$1" ]; then eval "$1"; fi; shift; "$@")
   echo "$k9s0ke_t3st_nl$?"
 }
@@ -36,8 +35,10 @@ k9s0ke_t3st_slurp_split() {  # args: 1=slurp 2=outvar 3=rcvar
   [ -z "${3:-}" ] || eval "$3=\${1##*\"$k9s0ke_t3st_nl\"}"
 }
 
-k9s0ke_t3st_tmpfile() {
-  :
+k9s0ke_t3st_tmp_file() {  # args: outvar [suffix]
+  k9s0ke_t3st_tmp_cnt=$(( k9s0ke_t3st_tmp_cnt + 1 ))
+  set -- "$1" "${2:-}"
+  eval "$1=\$k9s0ke_t3st_tmp_dir/tmp.\"\$2\".$k9s0ke_t3st_tmp_cnt"
 }
 
 k9s0ke_t3st_bailout() {
@@ -147,6 +148,9 @@ k9s0ke_t3st_me() {
 
 k9s0ke_t3st_enter () {
   k9s0ke_t3st_cnt=0
+  k9s0ke_t3st_tmp_dir=$(mktemp -d)
+  k9s0ke_t3st_tmp_cnt=0
+
   case "$(set +o)" in
     *'-o errexit'*)
       k9s0ke_t3st_bailout 'Do not "set -e" in your test file; use errexit=true or $k9s0ke_t3st_hook_test_pre'
@@ -156,5 +160,6 @@ k9s0ke_t3st_enter () {
 }
 k9s0ke_t3st_leave() {
   echo "${1:-1..$k9s0ke_t3st_cnt}"
+  [ -d "$k9s0ke_t3st_tmp_dir" ] && rm -rf "$k9s0ke_t3st_tmp_dir"
+  k9s0ke_t3st_tmp_dir=
 }
-
