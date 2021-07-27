@@ -41,7 +41,8 @@ k9s0ke_t3st_tmpfile() {
 }
 
 k9s0ke_t3st_bailout() {
-  echo 'Bail out!' "${*}"
+  [ $# -gt 0 ] || set -- ''  # posh workaround
+  printf '%s\n' "Bail out! ${*}"
   k9s0ke_t3st_leave
   exit 1
 }
