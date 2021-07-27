@@ -1,3 +1,8 @@
+* v0.9.1
+  * zsh support without `-y`
+  * errexit not TODO anymore; `posh` will fail
+  * github mirror
+
 * v0.9.0
   * TAP output (prove)
   * self-test suite
