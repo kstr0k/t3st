@@ -32,8 +32,8 @@ k9s0ke_t3st_slurp_cmd() {
 }
 # splits _slurp_cmd() output into actual output and $?
 k9s0ke_t3st_slurp_split() {  # args: 1=slurp 2=outvar 3=rcvar
-  eval "$2=\${1%\"$k9s0ke_t3st_nl\"*}"
-  eval "$3=\${1##*\"$k9s0ke_t3st_nl\"}"
+  [ -z "$2" ] || eval "$2=\${1%\"$k9s0ke_t3st_nl\"*}"
+  [ -z "$3" ] || eval "$3=\${1##*\"$k9s0ke_t3st_nl\"}"
 }
 
 k9s0ke_t3st_tmpfile() {
@@ -47,7 +47,7 @@ k9s0ke_t3st_bailout() {
 }
 
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
-  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_in= k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=false
+  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in= k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=false
   # keywords: rc, out, spec, nl, pp
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
@@ -60,6 +60,11 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   ! $k9s0ke_t3st_arg_nl || k9s0ke_t3st_arg_out=$k9s0ke_t3st_arg_out$k9s0ke_t3st_nl
   ! $k9s0ke_t3st_arg_errexit ||
     k9s0ke_t3st_arg_hook_test_pre="set -e$k9s0ke_t3st_nl${k9s0ke_t3st_arg_hook_test_pre:-}"
+  if [ "$k9s0ke_t3st_arg_outfile" ]; then  # outfile= overrides out=
+    k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd '' <"$k9s0ke_t3st_arg_outfile") ||
+      k9s0ke_t3st_bailout "not found: outfile $k9s0ke_t3st_arg_outfile"
+    k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_arg_out ''
+  fi
   if [ "$k9s0ke_t3st_arg_in" ]; then  # in= overrides infile=
     if ! $k9s0ke_t3st_arg_nl; then
       k9s0ke_t3st_bailout 'in=... nl=false not supported'; return 1
