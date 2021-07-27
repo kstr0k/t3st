@@ -118,8 +118,7 @@ k9s0ke_t3st_me() {
   if [ -r "$0".in ]; then exec <"$0".in; else exec </dev/null; fi
   local k9s0ke_t3st_out=
   if [ -r "$0".out ]; then
-    k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_cmd '' <"$0".out)
-    k9s0ke_t3st_out=${k9s0ke_t3st_out%$k9s0ke_t3st_nl*}
+    set -- outfile="$0".out "$@"
   fi
   k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" nl=false cnt=false infile=- "$@"
   )
