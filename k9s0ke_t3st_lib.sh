@@ -18,7 +18,7 @@ k9s0ke_t3st_ch_excl='!'
 k9s0ke_t3st_ch_semi=';'
 k9s0ke_t3st_ch_num='#'
 
-# runs "$@", copies output and appends \n$?
+# run "$@", copy output, append \n$?
 k9s0ke_t3st_slurp_exec() {  # args: 1=prelude 2...=command
   [ $# -gt 0 ] || { unset Error; : "${Error?internal: slurp}"; }
   [ $# -gt 1 ] || set -- "$@" cat
@@ -30,7 +30,7 @@ k9s0ke_t3st_slurp_exec() {  # args: 1=prelude 2...=command
   (if [ "$1" ]; then eval "$1"; fi; shift; "$@")
   echo "$k9s0ke_t3st_nl$?"
 }
-# splits _slurp_exec() output into actual output and $?
+# split _slurp_exec() output into actual output and $?
 k9s0ke_t3st_slurp_split() {  # args: 1=slurp 2=outvar 3=rcvar
   [ -z "${2:-}" ] || eval "$2=\${1%\"$k9s0ke_t3st_nl\"*}"
   [ -z "${3:-}" ] || eval "$3=\${1##*\"$k9s0ke_t3st_nl\"}"
@@ -48,13 +48,17 @@ k9s0ke_t3st_bailout() {
 }
 
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
+  # set defaults
   local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
   local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=false k9s0ke_t3st_arg_nounset=false
-  # keywords: rc, out, spec, nl, pp
+
+  # load parameters
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
     local "k9s0ke_t3st_arg_$1"; shift
   done
+
+  # process parameters
   case "$k9s0ke_t3st_arg_rc" in
     ''|*' '*) ;;  # '' will ignore $rc
     *) k9s0ke_t3st_arg_rc="-eq $k9s0ke_t3st_arg_rc" ;;
@@ -82,18 +86,25 @@ EOF
 '${k9s0ke_t3st_arg_hook_test_pre:-}
   fi
 
+  # execute, load output and $?
   [ $# -gt 0 ] || set -- cat  # posh workaround
   local k9s0ke_t3st_out; k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@")
   local out rc
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
+
+  # post-process
   if [ "$k9s0ke_t3st_arg_pp" ]; then
     k9s0ke_t3st_out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
       k9s0ke_t3st_slurp_exec '' k9s0ke_t3st_tmp "$out" "$rc")
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
   fi
+
+  # figure out results
   local ok; ok=true
   # zsh only needs 'setopt -y' (shwordsplit), but let's eval and be done
   eval '[ $rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
+
+  # print results
   $ok || printf 'not '
   printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) $k9s0ke_t3st_arg_spec"
   if $k9s0ke_t3st_arg_notok_diff && ! $ok; then
@@ -107,6 +118,8 @@ EOF
     printf '%s%6s out=' '# Actual: rc=' "$rc"
     "$@" "$out"                 | tr \\n '|'; echo
   fi
+
+  # cleanup, prepare next test
   ! $k9s0ke_t3st_arg_cnt || k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
 
