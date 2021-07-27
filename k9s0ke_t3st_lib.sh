@@ -78,6 +78,7 @@ EOF
 '${k9s0ke_t3st_arg_hook_test_pre:-}
   fi
 
+  [ $# -gt 0 ] || set -- cat  # posh workaround
   local k9s0ke_t3st_out; k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@")
   local out rc
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
@@ -105,6 +106,7 @@ EOF
 }
 
 k9s0ke_t3st_me() {
+  [ $# -gt 0 ] || set -- cat  # posh workaround
   if [ $# -eq 0 ]; then
     if test -r "$0".exec; then
       set -- "$0".exec
