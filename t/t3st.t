@@ -9,7 +9,6 @@ TTT() { k9s0ke_t3st_one "$@"; }
 # make script usable as library -- not required in general
 # we use this in t3st-e.t
 run_tests() {
-
 k9s0ke_t3st_enter
 
 # two minimal test; defaults: rc=0 out='' nl=true infile=/dev/null
@@ -40,6 +39,9 @@ TTT in=X out=X spec='in='
 TTT in="$k9s0ke_t3st_nl"X out="$k9s0ke_t3st_nl"X
 TTT in="$k9s0ke_t3st_nl" out="$k9s0ke_t3st_nl"
 
+TTT out=XX \
+  -- eval 'k9s0ke_t3st_tmp_file tf; echo XX >"$tf"; cat "$tf"'
+
 TTT out=XX infile=- spec='infile=- <<EOF' <<'EOF'
 XX
 EOF
@@ -64,6 +66,5 @@ TTT out=Done spec=Done \
   -- echo Done
 
 k9s0ke_t3st_leave
-
 }
 if [ "${1:-}" != --no-run ]; then run_tests "$@"; fi
