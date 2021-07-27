@@ -91,7 +91,8 @@ EOF
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
   fi
   local ok; ok=true
-  [ $rc ${k9s0ke_t3st_arg_rc:-} ] && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
+  # zsh only needs 'setopt -y' (shwordsplit), but let's eval and be done
+  eval '[ $rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
   $ok || printf 'not '
   printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) $k9s0ke_t3st_arg_spec"
   if $k9s0ke_t3st_arg_notok_diff && ! $ok; then
