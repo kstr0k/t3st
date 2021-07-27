@@ -50,8 +50,10 @@ TTT out=5 infile=- cnt=false spec='infile=- pipe' \
   -- eval 'set -- "$(cat)"; echo ${#1}'
 k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 
-TTT rc=1 nl=false errexit=true spec=errexit spec='# TODO : posh: set -e ignored in eval' \
+TTT rc='-ne 0' nl=false errexit=true spec='errexit # TODO : posh: set -e ignored in eval' \
   -- eval 'false; echo XX'
+TTT rc='-ne 0' nl=false nounset=true spec=nounset \
+  -- eval 'echo $NONE; echo XX' 2>/dev/null
 
 TTT rc='-ne 0' nl=false spec='# TODO : only with global "set -e" hook' \
   -- eval 'false; echo XX'
