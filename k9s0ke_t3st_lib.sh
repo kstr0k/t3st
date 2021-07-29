@@ -121,7 +121,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   fi
 
   # cleanup, prepare next test
-  rm -f "$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.*
+  (rm -f "$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.*) 2>/dev/null  # zsh yaks
   ! $k9s0ke_t3st_arg_cnt || k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
 
