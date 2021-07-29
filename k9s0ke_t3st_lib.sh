@@ -48,6 +48,14 @@ k9s0ke_t3st_bailout() {
   exit 1
 }
 
+k9s0ke_t3st_dump_str() {
+  local _pl
+  if _pl=$(which perl 2>/dev/null); then
+    "$_pl" -wE 'use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; print Dumper( $ARGV[0] )' -- "$@"
+  else printf %s\\n "$@"
+  fi
+}
+
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   # set defaults
   local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
@@ -69,7 +77,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     k9s0ke_t3st_arg_hook_test_pre="set -e$k9s0ke_t3st_nl${k9s0ke_t3st_arg_hook_test_pre:-}"
   ! $k9s0ke_t3st_arg_nounset ||
     k9s0ke_t3st_arg_hook_test_pre="set -u$k9s0ke_t3st_nl${k9s0ke_t3st_arg_hook_test_pre:-}"
-  if [ "$k9s0ke_t3st_arg_outfile" ]; then  # outfile= overrides out=
+  if [ "$k9s0ke_t3st_arg_outfile" ]; then  # outfile= overrides out=, nl=
     k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec '' <"$k9s0ke_t3st_arg_outfile") ||
       k9s0ke_t3st_bailout "not found: outfile $k9s0ke_t3st_arg_outfile"
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_arg_out ''
@@ -117,15 +125,10 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   $ok || printf 'not '
   printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) $([ $k9s0ke_t3st_arg_repeat -le 1 ] || echo "($k9s0ke_t3st_repeat_cnt/$k9s0ke_t3st_arg_repeat) ")$k9s0ke_t3st_arg_spec"
   if $k9s0ke_t3st_arg_notok_diff && ! $ok; then
-    local _pl
-    if _pl=$(which perl 2>/dev/null); then
-      eval set -- "$_pl"' -wE '\''use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; print Dumper( $ARGV[0] )'\'' --'
-    else eval set -- 'printf %s\\n'
-    fi
     printf '%s%6s out=' '# Expect: rc=' "$k9s0ke_t3st_arg_rc"
-    "$@" "$k9s0ke_t3st_arg_out" | tr \\n '|'; echo
+    k9s0ke_t3st_dump_str "$k9s0ke_t3st_arg_out" | tr \\n '|'; echo
     printf '%s%6s out=' '# Actual: rc=' "$rc"
-    "$@" "$out"                 | tr \\n '|'; echo
+    k9s0ke_t3st_dump_str "$out"                 | tr \\n '|'; echo
   fi
 
   # cleanup, prepare next test
