@@ -75,14 +75,14 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_arg_out ''
   fi
   if [ "$k9s0ke_t3st_arg_in" ]; then  # in= overrides infile=
-    if ! $k9s0ke_t3st_arg_nl; then
-      k9s0ke_t3st_bailout 'in=... nl=false not supported'; return 1
-    fi
-    k9s0ke_t3st_arg_hook_test_pre='exec <<EOF
-$k9s0ke_t3st_arg_in
-EOF
-'${k9s0ke_t3st_arg_hook_test_pre:-}
-  elif [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then
+    k9s0ke_t3st_arg_infile="$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.infile
+    { printf '%s' "$k9s0ke_t3st_arg_in"
+      ! $k9s0ke_t3st_arg_nl || echo
+    } >"$k9s0ke_t3st_arg_infile"
+    [ -r "$k9s0ke_t3st_arg_infile" ] ||
+      k9s0ke_t3st_bailout "could not write $k9s0ke_t3st_arg_infile"
+  fi
+  if [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then
     k9s0ke_t3st_arg_hook_test_pre='exec <"$k9s0ke_t3st_arg_infile"
 '${k9s0ke_t3st_arg_hook_test_pre:-}
   fi
@@ -121,6 +121,7 @@ EOF
   fi
 
   # cleanup, prepare next test
+  rm -f "$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.*
   ! $k9s0ke_t3st_arg_cnt || k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
 
