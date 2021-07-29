@@ -35,7 +35,7 @@ k9s0ke_t3st_slurp_split() {  # args: 1=slurp 2=outvar 3=rcvar
   [ -z "${3:-}" ] || eval "$3=\${1##*\"$k9s0ke_t3st_nl\"}"
 }
 
-k9s0ke_t3st_tmp_file() {  # args: outvar [suffix]
+k9s0ke_t3st_mktemp() {  # args: outvar [suffix]
   k9s0ke_t3st_tmp_cnt=$(( k9s0ke_t3st_tmp_cnt + 1 ))
   set -- "$1" "${2:-}"
   eval "$1=\$k9s0ke_t3st_tmp_dir/tmp.\"\$2\".$k9s0ke_t3st_tmp_cnt"

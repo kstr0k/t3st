@@ -41,7 +41,7 @@ TTT in="$k9s0ke_t3st_nl"X out="$k9s0ke_t3st_nl"X
 TTT in="$k9s0ke_t3st_nl" out="$k9s0ke_t3st_nl"
 
 TTT out=XX \
-  -- eval 'k9s0ke_t3st_tmp_file tf; echo XX >"$tf"; cat "$tf"'
+  -- eval 'k9s0ke_t3st_mktemp tf; echo XX >"$tf"; cat "$tf"'
 
 TTT out=XX infile=- spec='infile=- <<EOF' <<'EOF'
 XX
