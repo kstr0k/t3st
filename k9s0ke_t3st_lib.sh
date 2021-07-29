@@ -152,6 +152,9 @@ k9s0ke_t3st_enter () {
   k9s0ke_t3st_tmp_dir=$(mktemp -d)
   k9s0ke_t3st_tmp_cnt=0
 
+  touch "$k9s0ke_t3st_tmp_dir"/.t3st
+  [ -r "$k9s0ke_t3st_tmp_dir"/.t3st ] ||
+    k9s0ke_t3st_bailout "could not create workdir"
   case "$(set +o)" in
     *'-o errexit'*)
       k9s0ke_t3st_bailout 'Do not "set -e" in your test file; use errexit=true or $k9s0ke_t3st_hook_test_pre'
