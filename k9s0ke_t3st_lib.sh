@@ -89,21 +89,21 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
 
   # execute, load output and $?
   [ $# -gt 0 ] || set -- cat  # posh workaround
-  local k9s0ke_t3st_out; k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@")
-  local out rc
-  k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
+  k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@")
+  k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_out k9s0ke_t3st_rc
 
   # post-process
   if [ "$k9s0ke_t3st_arg_pp" ]; then
     k9s0ke_t3st_out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
-      k9s0ke_t3st_slurp_exec '' k9s0ke_t3st_tmp "$out" "$rc")
-    k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" out rc
+      k9s0ke_t3st_slurp_exec '' k9s0ke_t3st_tmp "$k9s0ke_t3st_out" "$k9s0ke_t3st_rc")
+    k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_out k9s0ke_t3st_rc
   fi
 
   # figure out results
-  local ok; ok=true
+  local ok=true
   # zsh only needs 'setopt -y' (shwordsplit), but let's eval and be done
-  eval '[ $rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
+  eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
+  local out rc; out=$k9s0ke_t3st_out; rc=$k9s0ke_t3st_rc
 
   # print results
   $ok || printf 'not '
