@@ -158,7 +158,16 @@ k9s0ke_t3st_me() {
   k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
 
-k9s0ke_t3st_enter () {
+k9s0ke_t3st_skip() {  # args: count comment
+  local _cnt; _cnt=$1; shift
+  while [ $_cnt -gt 0 ]; do
+    k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
+    printf '%s%s\n' "ok $k9s0ke_t3st_cnt # SKIP " "$1"
+    _cnt=$(( $_cnt - 1 ))
+  done
+}
+
+k9s0ke_t3st_enter() {
   k9s0ke_t3st_cnt=0
   k9s0ke_t3st_tmp_dir=$(mktemp -d)
   k9s0ke_t3st_tmp_cnt=0
