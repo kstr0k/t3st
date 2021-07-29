@@ -36,6 +36,7 @@ TTT rc=3 out=X spec='pp=' pp='echo "$1"; return $(( $2 + 1 ))' \
   -- eval 'printf X; exit 2'
 
 TTT in=X out=X spec='in='
+TTT in=X out=X nl=false spec='in= nl=false'
 TTT in="$k9s0ke_t3st_nl"X out="$k9s0ke_t3st_nl"X
 TTT in="$k9s0ke_t3st_nl" out="$k9s0ke_t3st_nl"
 
