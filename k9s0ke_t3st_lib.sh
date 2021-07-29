@@ -89,8 +89,8 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   [ $# -gt 0 ] || set -- cat  # posh workaround
 
   # loop: execute, load output and $?
-  k9s0ke_t3st_repeat_cnt=$k9s0ke_t3st_arg_repeat
-  while [ $k9s0ke_t3st_repeat_cnt -gt 0 ]; do
+  k9s0ke_t3st_repeat_cnt=1
+  while :; do
   k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@")
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_out k9s0ke_t3st_rc
 
@@ -105,14 +105,17 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   k9s0ke_t3st_ok=true
   # zsh only needs 'setopt -y' (shwordsplit), but let's eval and be done
   eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out:-}" ] || k9s0ke_t3st_ok=false
-  $k9s0ke_t3st_ok && k9s0ke_t3st_repeat_cnt=$(( k9s0ke_t3st_repeat_cnt - 1 )) || break
+  if $k9s0ke_t3st_ok && [ $k9s0ke_t3st_repeat_cnt -lt $k9s0ke_t3st_arg_repeat ]; then
+    k9s0ke_t3st_repeat_cnt=$(( k9s0ke_t3st_repeat_cnt + 1 ))
+  else break
+  fi
   done
   local ok out rc; out=$k9s0ke_t3st_out; rc=$k9s0ke_t3st_rc; ok=$k9s0ke_t3st_ok
   # end of loop
 
   # print results
   $ok || printf 'not '
-  printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) $k9s0ke_t3st_arg_spec"
+  printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) $([ $k9s0ke_t3st_arg_repeat -le 1 ] || echo "($k9s0ke_t3st_repeat_cnt/$k9s0ke_t3st_arg_repeat) ")$k9s0ke_t3st_arg_spec"
   if $k9s0ke_t3st_arg_notok_diff && ! $ok; then
     local _pl
     if _pl=$(which perl 2>/dev/null); then
