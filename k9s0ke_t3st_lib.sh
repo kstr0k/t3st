@@ -51,7 +51,7 @@ k9s0ke_t3st_bailout() {
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   # set defaults
   local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
-  local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=false k9s0ke_t3st_arg_nounset=false
+  local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=false k9s0ke_t3st_arg_nounset=false k9s0ke_t3st_arg_repeat=${k9s0ke_t3st_repeat:-1}
 
   # load parameters
   while [ $# -gt 0 ]; do
@@ -86,9 +86,11 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     k9s0ke_t3st_arg_hook_test_pre='exec <"$k9s0ke_t3st_arg_infile"
 '${k9s0ke_t3st_arg_hook_test_pre:-}
   fi
-
-  # execute, load output and $?
   [ $# -gt 0 ] || set -- cat  # posh workaround
+
+  # loop: execute, load output and $?
+  k9s0ke_t3st_repeat_cnt=$k9s0ke_t3st_arg_repeat
+  while [ $k9s0ke_t3st_repeat_cnt -gt 0 ]; do
   k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@")
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_out k9s0ke_t3st_rc
 
@@ -100,10 +102,13 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   fi
 
   # figure out results
-  local ok=true
+  k9s0ke_t3st_ok=true
   # zsh only needs 'setopt -y' (shwordsplit), but let's eval and be done
-  eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out:-}" ] || ok=false
-  local out rc; out=$k9s0ke_t3st_out; rc=$k9s0ke_t3st_rc
+  eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out:-}" ] || k9s0ke_t3st_ok=false
+  $k9s0ke_t3st_ok && k9s0ke_t3st_repeat_cnt=$(( k9s0ke_t3st_repeat_cnt - 1 )) || break
+  done
+  local ok out rc; out=$k9s0ke_t3st_out; rc=$k9s0ke_t3st_rc; ok=$k9s0ke_t3st_ok
+  # end of loop
 
   # print results
   $ok || printf 'not '
