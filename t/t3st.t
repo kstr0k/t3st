@@ -40,6 +40,9 @@ TTT in=X out=X nl=false spec='in= nl=false'
 TTT in="$k9s0ke_t3st_nl"X out="$k9s0ke_t3st_nl"X
 TTT in="$k9s0ke_t3st_nl" out="$k9s0ke_t3st_nl"
 
+TTT repeat=2 spec='# TODO : this succeeds only on 1st repetition' \
+  -- eval 'set -e; f=$k9s0ke_t3st_tmp_dir/rep; ! [ -r "$f" ]; touch "$f"'
+
 TTT out=XX \
   -- eval 'k9s0ke_t3st_mktemp tf; echo XX >"$tf"; cat "$tf"'
 
