@@ -60,16 +60,18 @@ k9s0ke_t3st_chk_running() {
   test -d "$k9s0ke_t3st_tmp_dir" || { echo 1>&2 'test workdir gone, exiting'; exit 1; }  # probably after bailout from subshell
 }
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
-  k9s0ke_t3st_chk_running
   # set defaults
+  k9s0ke_t3st_chk_running
   local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_notok_diff=true  k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
   local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=false k9s0ke_t3st_arg_nounset=false k9s0ke_t3st_arg_repeat=${k9s0ke_t3st_repeat:-1}
 
   # load parameters
+  [ $# -gt 0 ] || set -- --
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
     local "k9s0ke_t3st_arg_$1"; shift
   done
+  [ $# -gt 0 ] || set -- cat
 
   # process parameters
   case "$k9s0ke_t3st_arg_rc" in
@@ -98,7 +100,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     k9s0ke_t3st_arg_hook_test_pre='exec <"$k9s0ke_t3st_arg_infile"
 '${k9s0ke_t3st_arg_hook_test_pre:-}
   fi
-  [ $# -gt 0 ] || set -- cat  # posh workaround
+  [ "$k9s0ke_t3st_arg_spec" ] || k9s0ke_t3st_arg_spec="$1"
 
   # loop: execute, load output and $?
   k9s0ke_t3st_repeat_cnt=1
