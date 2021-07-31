@@ -54,9 +54,9 @@ XX
 EOF
 
 # pipes & subshells: set cnt=false infile=-, increment counter manually
-printf abcde |
-TTT out=5 infile=- cnt=false spec='infile=- pipe' \
-  -- eval 'set -- "$(cat)"; echo ${#1}'
+echo 'XX YY' |
+TTT out=XX infile=- cnt=false spec='infile=- pipe' \
+  -- eval 'read -r x rest; echo "$x"'
 k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 
 if [ "${POSH_VERSION:-}" ]; then k9s0ke_t3st_skip 1 'posh: set -e ignored in eval'; else
