@@ -59,8 +59,10 @@ TTT out=5 infile=- cnt=false spec='infile=- pipe' \
   -- eval 'set -- "$(cat)"; echo ${#1}'
 k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 
-TTT rc='-ne 0' nl=false errexit=true spec='errexit # posh: set -e ignored in eval' \
+if [ "${POSH_VERSION:-}" ]; then k9s0ke_t3st_skip 1 'posh: set -e ignored in eval'; else
+TTT rc='-ne 0' nl=false errexit=true spec=errexit \
   -- eval 'false; echo XX'
+fi
 TTT rc='-ne 0' nl=false nounset=true spec=nounset \
   -- eval 'echo $NONE; echo XX' 2>/dev/null
 
