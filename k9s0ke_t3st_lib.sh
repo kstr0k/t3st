@@ -159,6 +159,19 @@ k9s0ke_t3st_me() {
   k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
 
+k9s0ke_t3st_cnt_save() {
+  local _f; _f="$k9s0ke_t3st_tmp_dir"/.t3st.cnt
+  ! test -r "$_f" || k9s0ke_t3st_bailout 'would overwrite saved test counter'
+  echo "$k9s0ke_t3st_cnt" >"$_f"
+}
+k9s0ke_t3st_cnt_load() {
+  local _f; _f="$k9s0ke_t3st_tmp_dir"/.t3st.cnt
+  test -r "$_f" || k9s0ke_t3st_bailout 'test counter not saved'
+  IFS= read -r k9s0ke_t3st_cnt <"$_f"
+  rm -f "$_f"
+  k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
+}
+
 k9s0ke_t3st_skip() {  # args: count comment
   local _cnt; _cnt=$1; shift
   while [ $_cnt -gt 0 ]; do
