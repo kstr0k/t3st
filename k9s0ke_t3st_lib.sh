@@ -111,7 +111,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
 
   # figure out results
   k9s0ke_t3st_ok=true
-  # zsh only needs 'setopt -y' (shwordsplit), but let's eval and be done
+  # zsh would need 'setopt -y' (shwordsplit), but let's eval and be done
   eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out:-}" ] || k9s0ke_t3st_ok=false
   if $k9s0ke_t3st_ok && [ $k9s0ke_t3st_repeat_cnt -lt $k9s0ke_t3st_arg_repeat ]; then
     k9s0ke_t3st_repeat_cnt=$(( k9s0ke_t3st_repeat_cnt + 1 ))
@@ -132,7 +132,8 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   fi
 
   # cleanup, prepare next test
-  (rm -f "$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.*) 2>/dev/null  # zsh yaks
+  (rm -f "$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.*) 2>/dev/null ||
+    :  # zsh yaks if none, fails 'set -e' (but errexit=off here); setopt -3
   ! $k9s0ke_t3st_arg_cnt || k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
 
