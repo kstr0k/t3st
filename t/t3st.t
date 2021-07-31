@@ -21,8 +21,11 @@ TTT spec='# TODO : fails both output (\n) & $? but TODO ignores result' \
   -- false
 TTT out=/ spec='use eval for shell code' \
   -- eval 'cd /; pwd'
-test -r /etc/hosts &&  # run conditionally
-TTT spec='' nl=false outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}=/etc/hosts' \
+
+if [ -r /etc/hosts ]; then  # run conditionally
+TTT spec='' nl=false outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}=/etc/hosts'
+TTT spec='' nl=true outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}=/etc/hosts, nl=true ignored'
+fi
 
 k9s0ke_t3st_me spec='_me  -- args  # TODO : may fail with set -e (need symlinks)' \
   -- eval 'echo Hello world && false'
