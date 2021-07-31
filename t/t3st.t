@@ -56,8 +56,8 @@ EOF
 # pipes & subshells: set cnt=false infile=-, increment counter manually
 echo 'XX YY' |
 TTT out=XX infile=- cnt=false spec='infile=- pipe' \
-  -- eval 'read -r x rest; echo "$x"'
-k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
+  -- eval 'read -r x rest; echo "$x"; k9s0ke_t3st_cnt_save'
+k9s0ke_t3st_cnt_load
 
 if [ "${POSH_VERSION:-}" ]; then k9s0ke_t3st_skip 1 'posh: set -e ignored in eval'; else
 TTT rc='-ne 0' nl=false errexit=true spec=errexit \
