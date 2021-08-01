@@ -11,10 +11,12 @@ TTT() { k9s0ke_t3st_one "$@"; }
 run_tests() {
 k9s0ke_t3st_enter
 
-# two minimal test; defaults: rc=0 out='' nl=true infile=/dev/null
-TTT spec='minimal #1, nl=true' \
+# minimal tests; defaults: rc=0 out='' nl=true infile=/dev/null
+TTT spec='minimal #1, [nl=true]' \
   -- echo
-TTT nl=false spec='minimal #2, nl=false, command=cat'
+TTT nl=false spec='minimal #2, nl=false, [command=cat]'
+TTT in= spec='minimal #3, in="", [nl=true], [command=cat]'
+
 TTT nl=false \
   -- true
 TTT spec='# TODO : fails both output (\n) & $? but TODO ignores result' \
