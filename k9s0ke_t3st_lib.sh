@@ -102,8 +102,12 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
 '${k9s0ke_t3st_arg_hook_test_pre:-}
   fi
   [ "$k9s0ke_t3st_arg_spec" ] || k9s0ke_t3st_arg_spec="$1"
-  if [ "${k9s0ke_t3st_on_fail:-}" = skip ] && [ -r "$k9s0ke_t3st_tmp_dir"/.t3st.fail ]; then
-    k9s0ke_t3st_skip 1 "after fail: $k9s0ke_t3st_arg_spec"; return 0
+  if [ -r "$k9s0ke_t3st_tmp_dir"/.t3st.fail ]; then
+    case "$k9s0ke_t3st_on_fail" in
+      bailout)      k9s0ke_t3st_bailout "on_fail = bailout" ;;
+      skip-rest)    k9s0ke_t3st_skip 1 "after fail: $k9s0ke_t3st_arg_spec"; return 0 ;;
+      ignore-rest)  return 0 ;;
+    esac
   fi
 
   # loop: execute, load output and $?
