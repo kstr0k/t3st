@@ -22,8 +22,8 @@ TTT nl=false \
   -- true
 TTT spec='# TODO : fails both output (\n) & $? but TODO ignores result' \
   -- false
-TTT out=/ hook_test_pre='cd /' spec='use eval for shell code' \
-  -- eval 'echo $PWD'
+TTT out=// hook_test_pre='cd /' spec='use eval for shell code' \
+  -- eval 'printf $PWD; pwd'
 
 if [ -r /etc/hosts ]; then  # run conditionally
 TTT spec='' nl=false outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}=/etc/hosts'
