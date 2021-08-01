@@ -1,6 +1,7 @@
 #!/bin/sh
 set -u
 [ $# -gt 0 ] || set -- --  # posh workaround
+
 . "${0%/*}"/../k9s0ke_t3st_lib.sh
 
 # convenient, but watch namespace pollution
@@ -69,8 +70,10 @@ TTT out=XX set_pre=+u spec=set+u \
   -- eval 'printf "$T3STNONE"; echo XX' 2>/dev/null
 TTT rc='-ne 0' nl=false set_pre=-u spec=set-u \
   -- eval 'printf "$T3STNONE"; echo XX' 2>/dev/null
+if [ "${ZSH_VERSION:-}" ]; then k9s0ke_t3st_skip 1 'zsh: set -f is set -F'; else
 TTT out='*' set_pre=-f hook_test_pre='cd /' spec='set_pre' \
   -- eval 'echo *'
+fi
 
 TTT rc='-ne 0' nl=false spec='# TODO : only with global "set -e" hook' \
   -- eval 'false; echo XX'
