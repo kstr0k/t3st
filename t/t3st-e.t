@@ -1,7 +1,6 @@
 #!/bin/sh
 [ $# -gt 0 ] || set -- --  # posh workaround
-k9s0ke_t3st_hook_test_pre='set -e
-'${k9s0ke_t3st_hook_test_pre:-}
+k9s0ke_t3st_g_errexit=true
 
 # howto: use a script as both library & command
 # a simple `. something.t` would also do here though

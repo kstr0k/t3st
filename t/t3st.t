@@ -21,8 +21,8 @@ TTT nl=false \
   -- true
 TTT spec='# TODO : fails both output (\n) & $? but TODO ignores result' \
   -- false
-TTT out=/ spec='use eval for shell code' \
-  -- eval 'cd /; pwd'
+TTT out=/ hook_test_pre='cd /' spec='use eval for shell code' \
+  -- eval 'echo $PWD'
 
 if [ -r /etc/hosts ]; then  # run conditionally
 TTT spec='' nl=false outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}=/etc/hosts'
@@ -65,8 +65,12 @@ if [ "${POSH_VERSION:-}" ]; then k9s0ke_t3st_skip 1 'posh: set -e ignored in eva
 TTT rc='-ne 0' nl=false errexit=true spec=errexit \
   -- eval 'false; echo XX'
 fi
-TTT rc='-ne 0' nl=false nounset=true spec=nounset \
-  -- eval 'echo $NONE; echo XX' 2>/dev/null
+TTT out=XX set_pre=+u spec=set+u \
+  -- eval 'printf "$T3STNONE"; echo XX' 2>/dev/null
+TTT rc='-ne 0' nl=false set_pre=-u spec=set-u \
+  -- eval 'printf "$T3STNONE"; echo XX' 2>/dev/null
+TTT out='*' set_pre=-f hook_test_pre='cd /' spec='set_pre' \
+  -- eval 'echo *'
 
 TTT rc='-ne 0' nl=false spec='# TODO : only with global "set -e" hook' \
   -- eval 'false; echo XX'
