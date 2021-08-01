@@ -113,7 +113,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   # loop: execute, load output and $?
   k9s0ke_t3st_repeat_cnt=1
   while :; do
-  k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@")
+  k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@" 2>"$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.stderr)
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_out k9s0ke_t3st_rc
 
   # post-process
@@ -144,15 +144,24 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     esac
   fi
   printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) $([ $k9s0ke_t3st_arg_repeat -le 1 ] || echo "($k9s0ke_t3st_repeat_cnt/$k9s0ke_t3st_arg_repeat) ")$k9s0ke_t3st_arg_spec"
+
+  # maybe print diff
   (c=${k9s0ke_t3st_arg_diff_on%,},; while [ "$c" ]; do case "${c%%,*}" in
   ok) !  $ok || exit 0 ;;
   notok) $ok || exit 0;;
   esac; c=${c#*,}; done; false)
   if [ $? -eq 0 ]; then
-    printf '%s%6s out=' '# Expect: rc=' "$k9s0ke_t3st_arg_rc"
+    printf '%s%6s out=' '## Expect: rc=' "$k9s0ke_t3st_arg_rc"
     k9s0ke_t3st_dump_str "$k9s0ke_t3st_arg_out" | tr \\n '|'; echo
-    printf '%s%6s out=' '# Actual: rc=' "$rc"
+    printf '%s%6s out=' '## Actual: rc=' "$rc"
     k9s0ke_t3st_dump_str "$out"                 | tr \\n '|'; echo
+  fi
+
+  if test -s "$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.stderr; then
+    local _rl=
+    while IFS= read -r _rl; do printf '# %s\n' "$_rl"; done \
+      <"$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.stderr
+    [ -z "$_rl" ] || printf '# %s\n' "$_rl"  #'\ no final newline'
   fi
 
   # cleanup, prepare next test
