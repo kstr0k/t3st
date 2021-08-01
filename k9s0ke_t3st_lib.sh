@@ -70,6 +70,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   [ $# -gt 0 ] || set -- --
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
+    local "k9s0ke_t3st_has_arg_${1%%=*}=true"
     local "k9s0ke_t3st_arg_$1"; shift
   done
   [ $# -gt 0 ] || set -- cat
@@ -89,7 +90,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
       k9s0ke_t3st_bailout "not found: outfile $k9s0ke_t3st_arg_outfile"
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_arg_out ''
   fi
-  if [ "$k9s0ke_t3st_arg_in" ]; then  # in= overrides infile=
+  if "${k9s0ke_t3st_has_arg_in:-false}"; then  # in= overrides infile=
     k9s0ke_t3st_arg_infile="$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.infile
     { printf '%s' "$k9s0ke_t3st_arg_in"
       ! $k9s0ke_t3st_arg_nl || echo
