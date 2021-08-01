@@ -63,8 +63,8 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   k9s0ke_t3st_chk_running
 
   # set defaults
-  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on=${k9s0ke_t3st_diff_on:-notok} k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
-  local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=false k9s0ke_t3st_arg_nounset=false k9s0ke_t3st_arg_repeat=${k9s0ke_t3st_repeat:-1}
+  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on=${k9s0ke_t3st_g_diff_on:-notok} k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
+  local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_g_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=${k9s0ke_t3st_g_errexit:-false} k9s0ke_t3st_arg_set_pre=${k9s0ke_t3st_g_set_pre:-} k9s0ke_t3st_arg_repeat=${k9s0ke_t3st_g_repeat:-1}
 
   # load parameters
   [ $# -gt 0 ] || set -- --
@@ -81,10 +81,11 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     *) k9s0ke_t3st_arg_rc="-eq $k9s0ke_t3st_arg_rc" ;;
   esac
   ! $k9s0ke_t3st_arg_nl || k9s0ke_t3st_arg_out=$k9s0ke_t3st_arg_out$k9s0ke_t3st_nl
-  ! $k9s0ke_t3st_arg_errexit ||
-    k9s0ke_t3st_arg_hook_test_pre="set -e$k9s0ke_t3st_nl${k9s0ke_t3st_arg_hook_test_pre:-}"
-  ! $k9s0ke_t3st_arg_nounset ||
-    k9s0ke_t3st_arg_hook_test_pre="set -u$k9s0ke_t3st_nl${k9s0ke_t3st_arg_hook_test_pre:-}"
+  if $k9s0ke_t3st_arg_errexit  # after -> overrides
+    then k9s0ke_t3st_arg_set_pre="$k9s0ke_t3st_arg_set_pre -e"
+    else k9s0ke_t3st_arg_set_pre="$k9s0ke_t3st_arg_set_pre +e"
+  fi
+  k9s0ke_t3st_arg_hook_test_pre="set $k9s0ke_t3st_arg_set_pre$k9s0ke_t3st_nl$k9s0ke_t3st_arg_hook_test_pre"
   if [ "$k9s0ke_t3st_arg_outfile" ]; then  # outfile= overrides out=, nl=
     k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec '' <"$k9s0ke_t3st_arg_outfile") ||
       k9s0ke_t3st_bailout "not found: outfile $k9s0ke_t3st_arg_outfile"
@@ -100,11 +101,11 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   fi
   if [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then
     k9s0ke_t3st_arg_hook_test_pre='exec <"$k9s0ke_t3st_arg_infile"
-'${k9s0ke_t3st_arg_hook_test_pre:-}
+'${k9s0ke_t3st_arg_hook_test_pre}
   fi
   [ "$k9s0ke_t3st_arg_spec" ] || k9s0ke_t3st_arg_spec="$1"
   if [ -r "$k9s0ke_t3st_tmp_dir"/.t3st.fail ]; then
-    case "$k9s0ke_t3st_on_fail" in
+    case "${k9s0ke_t3st_g_on_fail:-}" in
       bailout)      k9s0ke_t3st_bailout "on_fail = bailout" ;;
       skip-rest)    k9s0ke_t3st_skip 1 "after fail: $k9s0ke_t3st_arg_spec"; return 0 ;;
       ignore-rest)  return 0 ;;
@@ -127,7 +128,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   # figure out results
   k9s0ke_t3st_ok=true
   # zsh would need 'setopt -y' (shwordsplit), but let's eval and be done
-  eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out:-}" ] || k9s0ke_t3st_ok=false
+  eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out}" ] || k9s0ke_t3st_ok=false
   if $k9s0ke_t3st_ok && [ $k9s0ke_t3st_repeat_cnt -lt $k9s0ke_t3st_arg_repeat ]; then
     k9s0ke_t3st_repeat_cnt=$(( k9s0ke_t3st_repeat_cnt + 1 ))
   else break
@@ -226,7 +227,7 @@ k9s0ke_t3st_enter() {
     k9s0ke_t3st_bailout "could not create workdir"
   case "$(set +o)" in
     *'-o errexit'*)
-      k9s0ke_t3st_bailout 'Do not "set -e" in your test file; use errexit=true or $k9s0ke_t3st_hook_test_pre'
+      k9s0ke_t3st_bailout 'Do not "set -e" in your test file; use errexit=true or $k9s0ke_t3st_g_hook_test_pre'
     ;;
   esac
   return 0  # plan printed at end
