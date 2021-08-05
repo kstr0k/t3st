@@ -2,7 +2,7 @@
 
 ## _Lightweight shell TAP testing library_
 
-**TLDR: [`t3st.t`](t/t3st.t)** tests the framework and serves as an example. Run `prove [-v]`.
+**TLDR: [`t3st.t`](t/t3st.t)** tests the framework and serves as an example &mdash; run `prove [-v]`. Run `git-t3st-setup` to add testing to an existing `git` project.
 
 `t3st` is a shell library to produce [TAP output](https://testanything.org/tap-specification.html). Use it to test shell functions, or any commands / scripts. It requires only a **POSIX shell** (but works under bash / dash / busybox / mksh / zsh / BSD sh / others) and a TAP framework (**`prove`** comes with any system perl). The defaults make tests easy to write without sacrificing correctness or flexibility. The test API completely avoids **namespace pollution**, which guarantees complete interoperability with any source. Features:
 - output + exit code testing, with precise final newline handling
@@ -11,6 +11,7 @@
 - [subshells and pipes](#subshells-and-pipes)
 - repeated tests
 - TAP directives (`TODO`)
+- adding to existing projects is a one-liner
 
 *Notes*
 - development takes place at [GitLab `t3st`](https://gitlab.com/kstr0k/t3st) but you can also report issues at the [GitHub `t3st` mirror](https://github.com/kstr0k/t3st).
@@ -18,6 +19,7 @@
 
 ## Highlights
 
+- [Installing](#installing)
 - [Usage](#usage)
   - [`errexit` & `nounset`](#errexit)
 - [Test function](#test-function)
@@ -27,6 +29,25 @@
 - [File-based (`_me`) tests](#file-based-_me-tests)
 - [Supported shells](#supported-shells)
 - [Copyright & license](#copyright)
+
+## Installing
+
+You can add `t3st` to your project directly:
+```
+cd myproject
+URL=https://gitlab.com/kstr0k/t3st/-/raw/master/git-t3st-setup
+curl -s "$URL"| less
+curl -s "$URL" | sh  # or ... | sh -s -- --tdir=./mytests
+git t3st-prove [-v]  # from anywhere in repo
+git t3st-setup       # update / repair
+```
+
+The script **adds to your `repo/.git/config`** file (displayed at startup), but won't overwrite unrelated (or subsequently modified) settings. Specifically, it
+* sets up a no-tags, no-push `t3st` git remote
+* creates a test directory (`--tdir=t/` by default) and copies the library to it directly from `git`. It also adds a `hello-t3st.t` example.
+* adds `git` aliases to run the tests (`git t3st-prove`) and to re-run itself (`git t3st-setup`). These aliases then conveniently work from anywhere in the repo.
+
+For manual installation, clone this repo and run `git-t3st-setup [--help]` from another project. Or just copy `k9s0ke_t3st_lib.sh` in your testsuite.
 
 ## Usage
 
@@ -49,11 +70,9 @@ k9s0ke_t3st_enter
 
 TTT spec='as bare as it gets' \
   -- echo
-TTT nl=false \
-  -- true
-TTT nl=false rc='-ne 0' \
+TTT nl=false rc='-ne 0' spec='standard command "false" -> non-0 exit status' \
   -- false
-TTT out=// hook_test_pre='cd /' spec='use eval if not single command' \
+TTT out=// hook_test_pre='cd /' spec='use eval for multiple commands' \
   -- eval 'printf $PWD; pwd'
 
 if (type __str_subst >/dev/null 2>&1); then
@@ -67,20 +86,20 @@ k9s0ke_t3st_leave
 ```
 
 That is: source [`k9s0ke_t3st_lib.sh`](k9s0ke_t3st_lib.sh) (along with any tested code you need to reference) and call
-- `k9s0ke_t3st_enter [test_plan]` to start TAP output. Leave the plan empty to have the library count tests automatically and print the plan at the end.
-- `k9s0ke_t3st_one [key=value]... [-- cmd args...]` (see [test function](#test-function) for defaults) for each test; it executes everything after "`--`" (a single command or function call &mdash; use `eval '...'` otherwise) in a subshell and checks the output and exit status.
+- `k9s0ke_t3st_enter [test_plan]` to start TAP output. Omit the plan to have the library count tests automatically and print the plan at the end.
+- `k9s0ke_t3st_one [key=value]... [-- cmd args...]` (see [test function](#test-function) for defaults) for each test; it executes everything after "`--`" (a single command or function call &mdash; use `eval '...'` otherwise) in a subshell and checks the output and exit status. Usually aliased to `TTT`.
 - `k9s0ke_t3st_me` &mdash; alternative file-based tests (see [`_me` tests](#file-based-_me-tests))
-- `k9s0ke_t3st_leave [test_plan]`: ends TAP output. If no plan was supplied on `..._enter`, it prints the supplied test plan, or generates one that matches the total number of test calls ("1..`k9s0ke_t3st_one`-call-count". The simplest setup is to not pass a test plan to either `_enter` or `leave`.
+- `k9s0ke_t3st_leave [test_plan]`: ends TAP output. If no plan was given to `..._enter`, it prints the supplied test plan, or generates one that matches the total number of test calls ("1..`k9s0ke_t3st_one`-call-count"). The simplest setup is to not pass a test plan to either `_enter` or `leave`.
 
 ### `errexit`
 
-**Don't "set -e" globally** (i.e. anywhere outside a `_one` or `_me` call); this would make it impossible to properly record exit status, and the library code itself must run without `set -e`. Instead, either
-- set a **global errexit default** (`k9s0ke_t3st_g_errexit=true`), OR
+**Don't "set -e" globally** (i.e. outside a `_one` or `_me` call); this would make it impossible to properly record exit status, and the library code itself must run without `set -e`. Instead, either
+- set a **global errexit default** (`k9s0ke_t3st_g_errexit=true`) in the `.t` file or in the environment (`k9s0ke_t3st_g_errexit=true prove...`), OR
 - use `errexit=true` in individual `..._one` / `..._me` calls, OR
-- define a shortcut function (`TTTe() { k9s0ke_t3st_one errexit=true $@; }`), OR
+- define a shortcut function (`TTT_e() { k9s0ke_t3st_one errexit=true $@; }`), OR
 - `set -e` inside the tested code (or inside a `-- eval` argument).
 
-To run tests with **both `set -e` and `set +e`**, create a `...-e.t` file which adds a global `errexit` default, then sources the base `.t` file. [t/t3st-e.t](t/t3st-e.t) implements a more general version of this for making scripts usable as both commands and libraries.
+To run tests with **both `set -e` and `set +e`**, create a `...-e.t` file which adds a global `errexit` default, then sources the base `.t` file. The `-e.t` file can also define additional tests. [t/t3st-e.t](t/t3st-e.t) implements a more general version of this for making scripts usable as both commands and libraries.
 
 `set -u` does not affect operation &mdash; set it either way globally and/or use `set_pre=[-/+]u` parameters (or the `$k9s0ke_t3st_g_set_pre` global default).
 
@@ -98,7 +117,7 @@ TTT nl=false  # stdin = /dev/null; expect out=''
 These illustrate the defaults: call `cat` if no command is supplied, expect exit status `rc=0`, expect output `out=''`, add a **final newline** to the expected output (`nl=true`), **stdin from `/dev/null`**. The available arguments (before "`--`"; all optional, in any order; some defaults can be overridden by setting a corresponding **`k9s0ke_t3st_g_...` global**) are:
   - `nl={ true | false }`: adds a newline to the expected `out=`, as well as any `in=` parameters described below (but not to `infile= / outfile=`). This is the default (most commands work with full lines); override with `nl=false`.
   - `out='expected...'` (default: empty) compare the command's output (including any final newline) to the specified string (plus a newline if `nl=true`). For more complex conditions, use `pp=` ([extras](#extras)).
-  - `outfile='...'`: load `out=` from a file (despite the name this *will not clobber* host files); `nl=` does not apply.
+  - `outfile='...'`: load `out=` from a file (despite the name this *won't clobber* host files); `nl=` does not apply.
   - `infile={ 'path' | [-] }`: redirect the command's input, or **leave stdin alone** (use caller's environment); without any `infile=` (or `in=`), all tests run with input from **`/dev/null`**. `nl=` has no influence.
   - `in='...'`: input to pass on `stdin` to the command; an **additional newline** is added with (the default) `nl=true` (even for an empty `in`). For a completely empty input, don't specify either `in=` or `infile=`, or use `in= nl=false`; for a single newline, use `in=` or `in="$k9s0ke_t3st_nl" nl=false`. As noted above, `nl=` also affects expected output.
   - `rc={ $rc | '-$cmp $rc'}`: compare the command's exit status (`$?`) to the supplied value / uses the value as a shell `test` condition (e.g. **`rc='-lt 2'`** checks that `$?` is 0 or 1). If omitted, the expected exit is 0; if set to `''`, the exit status is ignored.
@@ -109,7 +128,7 @@ These illustrate the defaults: call `cat` if no command is supplied, expect exit
   - `repeat=N`: repeat this test `N` times, or until it first fails. Defaults to 1, or `$k9s0ke_t3st_g_repeat`.
   - `cnt={ true | false }`: the test counter `$k9s0ke_t3st_cnt` normally auto-increments; this can be disabled for pipes and subshells &mdash; see below
 
-Note that shell variables (including `in=`, `out=`, and the internal variable that stores actual output) cannot contain `NUL` (`\0`) characters. The `infile=`, however, as well as pipes / redirects, can. Preprocess any `NUL`s' before they reach the library (e.g. `eval '... | tr \\0 \\n'`; **`pp=` will not help**).
+Note that shell variables (including `in=`, `out=`, and the internal variable that stores actual output) cannot contain `NUL` (`\0`) characters. The `infile=`, however, as well as pipes / redirects, can. Preprocess any `NUL`s' before they reach the library (e.g. `eval '... | tr \\0 \\n'`; **`pp=` won't help**).
 
 ### Redirects
 
@@ -124,14 +143,14 @@ The standard error log of each test is normally pasted as TAP '`# `' comments be
 
 ### Subshells and pipes
 
-`k9s0ke_t3st_one` can run in a pipeline, but it will *possibly* execute in a different (forked) process than the main script. As such, pass `infile=-` (avoids the default `</dev/null`), `cnt=false` (in case the test part of the pipeline might run in the script process), and increment the counter manually after each such test:
+`k9s0ke_t3st_one` can run in a pipeline, but it *might* execute in a different (forked) process than the main script. As such, pass `infile=-` (avoids the default `</dev/null`), `cnt=false` (in case the test part of the pipeline might run in the script process), and increment the counter manually after each such test:
 ```
 echo 'XX YY' | k9s0ke_t3st_one out=XX infile=- cnt=false \
   -- eval 'read -r x rest; echo "$x"'
 k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 ```
 
-This will also be necessary if you call `k9s0ke_t3st_one` from a subshell. If the forked process might run an undetermined number of tests, use
+This is also necessary if you call `k9s0ke_t3st_one` from a subshell. If the forked process might run an undetermined number of tests, use
 - `k9s0ke_t3st_cnt_save` at the end of a subshell / pipe
 - `k9s0ke_t3st_cnt_load` back in the top-level shell
 
@@ -170,7 +189,7 @@ k9s0ke_t3st_me
 
 ## Supported shells
 
-While the library itself only uses POSIX shell code, it can test scripts that require `bash` (or others) &mdash; the library code will work in several shells. Use an appropriate shebang in your `.t` file, or pass `prove` a `-e` argument. For example, the following has been used to test `t3st` itself (with no errors):
+While the library itself only uses POSIX shell code, it can test scripts that require `bash` (or others) &mdash; the library code works in several shells. Use an appropriate shebang in your `.t` file, or pass `prove` a `-e` argument. The following is being used to test `t3st` itself (with no errors):
 
 ```
 for shell in dash bash 'busybox sh' mksh yash zsh posh
@@ -197,7 +216,7 @@ Use `setopt [no]...` to change these options (e.g. `nonomatch`), or use `zsh --e
 ## See also
 
 - The [`mru-files.kak` test branch](https://gitlab.com/kstr0k/mru-files.kak/-/tree/test) has a self-contained `t3st` setup (add a `t3st` git remote, fetch `k9s0ke_t3st_lib.sh` without any checkout / clone).
-- [TAP consumers](https://testanything.org/consumers.html) if you want to go beyond the widely available `prove` command. It doesn't matter in what language they are written as long as they can parse TAP output. For example, ESR's [`tapview`](https://gitlab.com/esr/tapview/). You will still need to generate the TAP output in the first place, e.g. using `prove -a tap.tgz` (the `.t` files in the archive are, somewhat confusingly, TAP logs named like the tests that produced them)
+- [TAP consumers](https://testanything.org/consumers.html) if you want to go beyond the widely available `prove` command. It doesn't matter in what language they are written as long as they can parse TAP output. For example, ESR's [`tapview`](https://gitlab.com/esr/tapview/). You will still need to generate the TAP output in the first place, e.g. using `prove -a tap.tgz` (the `.t` files in the archive are, somewhat confusingly, TAP logs named like the tests that produced them).
 - other frameworks: [`shellspec`](https://github.com/shellspec/shellspec), [`sharness`](https://github.com/chriscool/sharness), [`bats-core`](https://github.com/bats-core/bats-core), [`shspec`](https://github.com/rylnd/shpec), [`assert.sh`](https://github.com/lehmannro/assert.sh)
 
 ## Copyright
