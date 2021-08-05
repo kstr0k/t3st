@@ -75,9 +75,11 @@ TTT out='*' set_pre=-f hook_test_pre='cd /' spec='set_pre' \
   -- eval 'echo *'
 fi
 
-TTT rc='-ne 0' nl=false spec='# TODO : only with global "set -e" hook' \
+TTT spec='# TODO : fails without global k9s0ke_t3st_g_errexit=true' \
+  rc='-ne 0' nl=false \
   -- eval 'false; echo XX'
-TTT rc=0 out=XX spec='# TODO : only without global "set -e" hook' \
+TTT spec='# TODO : fails with global k9s0ke_t3st_g_errexit' \
+  rc=0 out=XX \
   -- eval 'false; echo XX'
 
 TTT out=Done spec=Done \
