@@ -1,0 +1,115 @@
+#!/bin/sh
+set -ue
+
+# Adds a git remote for `t3st`. Sets up a test dir.
+
+_O_run=true _O_fetch=true _O_hello= _O_reset=false _O_tdir=
+
+GCDIR=$(git rev-parse --git-common-dir) || { unset Not; : "${Not?in a git repo}"; }
+echo 1>&2 'Configuring t3st in git config:'
+git -c core.editor='echo' config -e 1>&2 2>/dev/null; echo 1>&2
+cd "${GIT_PREFIX:-.}"; unset GIT_DIR  # run from alias
+
+# adapted min-template.sh (https://git@gitlab/kstr0k/bashaaparse)
+__usage() {  # args: header footer
+  local flags; flags=$(set | sed -ne 's/^_O_\([^=]*\)=.*/--\1/; t p; d; :p; s/_/-/g; p')
+  printf '%s'${1:+'\n'}  "${1:-}"  # add \n only if missing
+  test -z "$flags" || printf '%s=ARG\n'  $flags
+  printf '%s'${2:+'\n'}  "${2:-}"
+}
+__parse_args() {
+  local k; test $# -gt 0 || set -- --
+  if ! __process_arg "$@"; then case "$1" in
+      -v) set -x ;; -h|--help|--usage|-'?') __usage 'Options:'; exit 0 ;;
+      --*=*) k=${1%%=*}; k=_O_${k#--}-
+        while :; do case "$k" in
+          *-) k=${k%%-*}_${k#*-} ;;
+           *) eval "${k%_}=\${1#--*=}"; break ;;
+        esac; done ;;
+      --no-?*) k=$1; shift; __parse_args "--${k#--no-}=false" "$@"; return ;;
+      --?*)    k=$1; shift; __parse_args "$k=true"            "$@"; return ;;
+      --) shift; __main "$@"; return $? ;;
+      *)         __main "$@"; return $? ;;
+  esac; fi
+  shift; __parse_args "$@"
+}; __process_arg() { return 1; }
+
+setup_git() {
+  local f
+  if $_O_reset; then (set -x
+    git remote remove kstr0k-t3st
+    git config --unset t3st.tdir
+    git config --unset alias.t3st-prove
+    git config --unset alias.t3st-setup
+  )
+  fi
+  if git remote add kstr0k-t3st https://gitlab.com/kstr0k/t3st.git 2>/dev/null; then
+    #git config remote.kstr0k-t3st.fetch '+refs/tags/*:refs/tags/t3st/*'
+    : "${_O_hello:=true}"
+    git config remote.kstr0k-t3st.tagOpt --no-tags
+    git remote set-branches kstr0k-t3st master
+    git remote set-url --push kstr0k-t3st ''
+    git fetch kstr0k-t3st
+    echo 1>&2 'Added t3st remote'; git remote -v 1>&2
+  else
+    ! $_O_fetch || (set -x; git fetch kstr0k-t3st)
+  fi
+
+  [ "$_O_tdir" ] || { echo 1>&2 'Not setting up a t/ dir'; return 0; }
+  git config alias.t3st-prove '!f(){ prove "$@" "$(git config t3st.tdir)"; }; f'
+  git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/master:git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
+  echo 1>&2 'Added git aliases t3st-*'
+  mkdir -p "$_O_tdir"
+  for f in k9s0ke_t3st_lib.sh; do
+    if [ -r "$_O_tdir"/"$f" ]; then
+      echo 1>&2 "# rm -f \"$_O_tdir/$f\"  # exists; remove & re-run to update"
+    else
+      (set -x; git show kstr0k-t3st/master:"$f" >"$_O_tdir"/"$f")
+    fi
+  done
+  echo 1>&2 "$_O_tdir set up for t3st tests."
+  if ! [ -r "$_O_tdir"/hello-t3st.t ] && ${_O_hello:-false}; then
+    cat >"$_O_tdir"/hello-t3st.t <<'EOF'
+#!/bin/sh
+. "${0%/*}"/k9s0ke_t3st_lib.sh
+#set -u  # recommended.      # DON'T `set -e` globally
+#k9s0ke_t3st_g_errexit=true  # applies to all tests
+
+TTT()   { k9s0ke_t3st_one "$@"; }
+TTT_e() { k9s0ke_t3st_one errexit=true "$@"; }
+k9s0ke_t3st_enter
+
+TTT out='Hello t3st' diff_on=ok,notok \
+  -- echo 'Hello' 't3st'
+
+k9s0ke_t3st_leave
+
+# prove [-v] [-e $shell] hello-t3st.t
+# prove [...] [-r] t/
+# git t3st-prove [-...] # if set up
+# git t3st-setup        # update / repair
+EOF
+    chmod a+x "$_O_tdir"/hello-t3st.t
+    echo 1>&2 "Created sample test $_O_tdir/hello-t3st.t"
+    local prove; prove=$(command -v prove)
+    [ -z "$prove" ] || (set -x; prove -e /bin/sh -v "$_O_tdir"/hello-t3st.t)
+  fi
+}
+
+__set_defaults() {
+  [ "$_O_tdir" ] || _O_tdir=$(git config t3st.tdir) || _O_tdir=$PWD/t
+  [ "$_O_tdir" != false ] || _O_tdir=
+  if [ "$_O_tdir" ]; then
+    case "$_O_tdir" in /*) ;; *) _O_tdir=$(pwd -P)/$_O_tdir ;; esac
+    (set -x; git config t3st.tdir "$_O_tdir")
+  fi
+}
+
+__main() {
+  $_O_run || exit 0
+  __set_defaults
+  [ $# -eq 0 ] || { unset Bad && : "{Bad?args "$*"}"; }
+  setup_git
+}
+
+__parse_args "$@"
