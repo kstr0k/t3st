@@ -50,7 +50,7 @@ k9s0ke_t3st_bailout() {
 
 k9s0ke_t3st_dump_str() {
   local _pl
-  if _pl=$(which perl 2>/dev/null); then
+  if _pl=$(command -v perl 2>/dev/null); then
     "$_pl" -wE 'use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; print Dumper( $ARGV[0] )' -- "$@"
   else printf %s\\n "$@"
   fi
