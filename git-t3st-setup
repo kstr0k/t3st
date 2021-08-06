@@ -12,9 +12,10 @@ cd "${GIT_PREFIX:-.}"; unset GIT_DIR  # run from alias
 
 # adapted min-template.sh (https://git@gitlab/kstr0k/bashaaparse)
 __usage() {  # args: header footer
-  local flags; flags=$(set | sed -ne 's/^_O_\([^=]*\)=.*/--\1/; t p; d; :p; s/_/-/g; p')
+  local flags; flags=$(
+    set | sed -n -e '/^_O_/!d;s/_/-/g;s/^-O-\([[:alnum:]-]*\)=.*/--\1=ARG/p')
   printf '%s'${1:+'\n'}  "${1:-}"  # add \n only if missing
-  test -z "$flags" || printf '%s=ARG\n'  $flags
+  test -z "$flags" || printf '%s\n' "$flags"
   printf '%s'${2:+'\n'}  "${2:-}"
 }
 __parse_args() {
@@ -108,7 +109,7 @@ __set_defaults() {
 __main() {
   $_O_run || exit 0
   __set_defaults
-  [ $# -eq 0 ] || { unset Bad && : "{Bad?args "$*"}"; }
+  [ $# -eq 0 ] || { unset Bad && : "${Bad?args "$*"}"; }
   setup_git
 }
 
