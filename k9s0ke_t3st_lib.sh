@@ -1,4 +1,5 @@
 #!/bin/sh
+#shellcheck disable=SC1007,SC3043,SC2034
 
 k9s0ke_t3st_nl='
 '
@@ -6,7 +7,7 @@ k9s0ke_t3st_ch_newline=$k9s0ke_t3st_nl
 k9s0ke_t3st_ch_tab=$(printf \\t)
 k9s0ke_t3st_ch_apos="'"
 k9s0ke_t3st_ch_amp='&'
-k9s0ke_t3st_ch_bsol='\'
+k9s0ke_t3st_ch_bsol=\\
 k9s0ke_t3st_ch_gt='>'
 k9s0ke_t3st_ch_lt='<'
 k9s0ke_t3st_ch_vert='|'
@@ -50,7 +51,7 @@ k9s0ke_t3st_bailout() {
 
 k9s0ke_t3st_dump_str() {
   local _pl
-  if _pl=$(command -v perl 2>/dev/null); then
+  if _pl=$(command -v perl 2>/dev/null); then #shellcheck disable=SC2016
     "$_pl" -wE 'use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; print Dumper( $ARGV[0] )' -- "$@"
   else printf %s\\n "$@"
   fi
@@ -92,14 +93,14 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_arg_out ''
   fi
   if "${k9s0ke_t3st_has_arg_in:-false}"; then  # in= overrides infile=
-    k9s0ke_t3st_arg_infile="$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.infile
+    k9s0ke_t3st_arg_infile="$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".infile
     { printf '%s' "$k9s0ke_t3st_arg_in"
       ! $k9s0ke_t3st_arg_nl || echo
     } >"$k9s0ke_t3st_arg_infile"
     [ -r "$k9s0ke_t3st_arg_infile" ] ||
       k9s0ke_t3st_bailout "could not write $k9s0ke_t3st_arg_infile"
   fi
-  if [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then
+  if [ - != "${k9s0ke_t3st_arg_infile:--}" ]; then #shellcheck disable=SC2016
     k9s0ke_t3st_arg_hook_test_pre='exec <"$k9s0ke_t3st_arg_infile"
 '${k9s0ke_t3st_arg_hook_test_pre}
   fi
@@ -115,11 +116,12 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   # loop: execute, load output and $?
   k9s0ke_t3st_repeat_cnt=1
   while :; do
-  k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@" 2>"$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.stderr)
+  k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@" 2>"$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".stderr)
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_out k9s0ke_t3st_rc
 
   # post-process
   if [ "$k9s0ke_t3st_arg_pp" ]; then
+    #shellcheck disable=SC2154
     k9s0ke_t3st_out=$(eval "k9s0ke_t3st_tmp() { $k9s0ke_t3st_arg_pp $k9s0ke_t3st_nl}"
       k9s0ke_t3st_slurp_exec '' k9s0ke_t3st_tmp "$k9s0ke_t3st_out" "$k9s0ke_t3st_rc")
     k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_out k9s0ke_t3st_rc
@@ -129,7 +131,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   k9s0ke_t3st_ok=true
   # zsh would need 'setopt -y' (shwordsplit), but let's eval and be done
   eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out}" ] || k9s0ke_t3st_ok=false
-  if $k9s0ke_t3st_ok && [ $k9s0ke_t3st_repeat_cnt -lt $k9s0ke_t3st_arg_repeat ]; then
+  if $k9s0ke_t3st_ok && [ "$k9s0ke_t3st_repeat_cnt" -lt "$k9s0ke_t3st_arg_repeat" ]; then
     k9s0ke_t3st_repeat_cnt=$(( k9s0ke_t3st_repeat_cnt + 1 ))
   else break
   fi
@@ -145,13 +147,14 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
       *) echo "$k9s0ke_t3st_cnt" >>"$k9s0ke_t3st_tmp_dir"/.t3st.fail ;;
     esac
   fi
-  printf 'ok%s\n'  " $(( $k9s0ke_t3st_cnt + 1 )) $([ $k9s0ke_t3st_arg_repeat -le 1 ] || echo "($k9s0ke_t3st_repeat_cnt/$k9s0ke_t3st_arg_repeat) ")$k9s0ke_t3st_arg_spec"
+  printf 'ok%s\n'  " $(( k9s0ke_t3st_cnt + 1 )) $([ "$k9s0ke_t3st_arg_repeat" -le 1 ] || echo "($k9s0ke_t3st_repeat_cnt/$k9s0ke_t3st_arg_repeat) ")$k9s0ke_t3st_arg_spec"
 
   # maybe print diff
   (c=${k9s0ke_t3st_arg_diff_on%,},; while [ "$c" ]; do case "${c%%,*}" in
   ok) !  $ok || exit 0 ;;
   notok) $ok || exit 0;;
   esac; c=${c#*,}; done; false)
+  #shellcheck disable=SC2181
   if [ $? -eq 0 ]; then
     printf '%s%6s out=' '## Expect: rc=' "$k9s0ke_t3st_arg_rc"
     k9s0ke_t3st_dump_str "$k9s0ke_t3st_arg_out" | tr \\n '|'; echo
@@ -159,15 +162,15 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     k9s0ke_t3st_dump_str "$out"                 | tr \\n '|'; echo
   fi
 
-  if test -s "$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.stderr; then
+  if test -s "$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".stderr; then
     local _rl=
     while IFS= read -r _rl; do printf '# %s\n' "$_rl"; done \
-      <"$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.stderr
+      <"$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".stderr
     [ -z "$_rl" ] || printf '# %s\n' "$_rl"  #'\ no final newline'
   fi
 
   # cleanup, prepare next test
-  (rm -f "$k9s0ke_t3st_tmp_dir"/.t3st.$k9s0ke_t3st_cnt.*) 2>/dev/null ||
+  (rm -f "$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".*) 2>/dev/null ||
     :  # zsh yaks if none, fails 'set -e' (but errexit=off here); setopt -3
   ! $k9s0ke_t3st_arg_cnt || k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
@@ -210,10 +213,10 @@ k9s0ke_t3st_cnt_load() {
 k9s0ke_t3st_skip() {  # args: count comment
   k9s0ke_t3st_chk_running
   local _cnt; _cnt=$1; shift
-  while [ $_cnt -gt 0 ]; do
+  while [ "$_cnt" -gt 0 ]; do
     k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
     printf '%s%s\n' "ok $k9s0ke_t3st_cnt # SKIP " "$1"
-    _cnt=$(( $_cnt - 1 ))
+    _cnt=$(( _cnt - 1 ))
   done
 }
 
