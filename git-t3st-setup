@@ -3,7 +3,7 @@ set -ue
 
 # Adds a git remote for `t3st`. Sets up a test dir.
 
-_O_run=true _O_fetch=true _O_hello= _O_reset=false _O_tdir=
+_O_run=true _O_tdir= _O_fetch=true _O_hello= _O_reset=false _O_setup=true
 
 GCDIR=$(git rev-parse --git-common-dir) || { unset Not; : "${Not?in a git repo}"; }
 echo 1>&2 'Configuring t3st in git config:'
@@ -11,39 +11,46 @@ git -c core.editor='echo' config -e 1>&2 2>/dev/null; echo 1>&2
 cd "${GIT_PREFIX:-.}"; unset GIT_DIR  # run from alias
 
 # adapted min-template.sh (https://git@gitlab/kstr0k/bashaaparse)
-__usage() {  # args: header footer
-  local flags; flags=$(
-    set | sed -n -e '/^_O_/!d;s/_/-/g;s/^-O-\([[:alnum:]-]*\)=.*/--\1=ARG/p')
-  printf '%s'${1:+'\n'}  "${1:-}"  # add \n only if missing
-  test -z "$flags" || printf '%s\n' "$flags"
+__usage() {  # args: <help-option> header footer
+  local vs=false; [ "$1" != '-?' ] || vs=true; shift
+  local flags p='/^_O_/!d;/[^[:alnum:]_]/d;h;s/_/-/g;s/^-O-/--/;s/$/=ARG/p'
+  ! "$vs" || p=${p%';s'*}';G;s/\n/[='\''$/;s/$/'\'']/p'
+  flags=$(set | sed -n -e '/=/!d;s/=.*//' -e "$p")  # posh fails: no =.*
+  printf '%s'${1:+'\n'}  "${1:-}"
+  test -z "$flags" || { ! "$vs" || eval flags="\"$flags\""; printf '%s\n' "$flags"; }
   printf '%s'${2:+'\n'}  "${2:-}"
 }
 __parse_args() {
   local k; test $# -gt 0 || set -- --
   if ! __process_arg "$@"; then case "$1" in
-      -v) set -x ;; -h|--help|--usage|-'?') __usage 'Options:'; exit 0 ;;
-      --*=*) k=${1%%=*}; k=_O_${k#--}-
-        while :; do case "$k" in
+      -v) set -x ;;
+      -h|--help|--usage|-'?') __usage "$1" 'Options:'; exit 0 ;;
+      --*=*) k=${1%%=*}; k=_O_${k#--}
+        case "$k" in (*[![:alnum:]_-]*) unset Bad; : "${Bad?arg "$k"}";; esac
+        k=$k-; while :; do case "$k" in
           *-) k=${k%%-*}_${k#*-} ;;
            *) eval "${k%_}=\${1#--*=}"; break ;;
         esac; done ;;
+      --exit) return 0 ;;
       --no-?*) k=$1; shift; __parse_args "--${k#--no-}=false" "$@"; return ;;
       --?*)    k=$1; shift; __parse_args "$k=true"            "$@"; return ;;
       --) shift; __main "$@"; return $? ;;
       *)         __main "$@"; return $? ;;
   esac; fi
   shift; __parse_args "$@"
-}; __process_arg() { return 1; }
+}
+__process_arg() { return 1; }
+
+uninstall_git() (
+  set -x
+  git remote remove kstr0k-t3st
+  for u in t3st.tdir t3st.prove-shells alias.t3st-prove alias.t3st-setup; do
+    git config --unset "$u"
+  done
+)  # subshell function
 
 setup_git() {
   local f
-  if $_O_reset; then (set -x
-    git remote remove kstr0k-t3st
-    for u in t3st.tdir t3st.prove-shells alias.t3st-prove alias.t3st-setup; do
-      git config --unset "$u"
-    done
-  )
-  fi
   if git remote add kstr0k-t3st https://gitlab.com/kstr0k/t3st.git 2>/dev/null; then
     #git config remote.kstr0k-t3st.fetch '+refs/tags/*:refs/tags/t3st/*'
     : "${_O_hello:=true}"
@@ -59,7 +66,7 @@ setup_git() {
   [ "$_O_tdir" ] || { echo 1>&2 'Not setting up a t/ dir'; return 0; }
   git config t3st.prove-shells >/dev/null ||
     git config t3st.prove-shells 'sh,bash,#dash,ash,busybox sh,bash --posix,bash44,bash32,zsh,zsh --emulate sh,zsh --emulate ksh,mksh,yash,posh'
-      git config alias.t3st-prove '!f(){ local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; printf "\nshell = %s\n\n" "$sh"; prove -e "$sh" "$@" "$(git config t3st.tdir)"; done; }; f'
+      git config alias.t3st-prove '!f(){ local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; printf "\n# shell = %s\n\n" "$sh"; prove -e "$sh" "$@" "$(git config t3st.tdir)"; done; }; f'
   git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/master:git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
   echo 1>&2 'Added git aliases t3st-*'
   mkdir -p "$_O_tdir"
@@ -78,20 +85,24 @@ setup_git() {
 #set -u  # recommended.      # DON'T `set -e` globally
 #k9s0ke_t3st_g_errexit=true  # applies to all tests
 
+# prove [-v] [-e $shell] [t/hello-t3st.t]
+# git t3st-prove [...]
+# git t3st-setup  # update / repair
+# git config t3st.prove-shells 'sh,bash,busybox sh,mksh#,dash,zsh,zsh --emulate sh,yash'
+# git -c t3st.prove-shells='override..' t3st.prove [...]
+
 TTT()   { k9s0ke_t3st_one "$@"; }
 TTT_e() { k9s0ke_t3st_one errexit=true "$@"; }
 k9s0ke_t3st_enter
 
 TTT out='Hello t3st' diff_on=ok,notok \
-  -- echo 'Hello' 't3st'
+  -- echo Hello t3st
 
 k9s0ke_t3st_leave
 
-# prove [-v] [-e $shell] hello-t3st.t
-# prove [...] [-r] t/
-# git t3st-prove [-...] # if set up
-# git t3st-setup        # update / repair
-# git config t3st.prove-shells
+## set up a different test dir:
+# curl -s https://gitlab.com/kstr0k/t3st/-/raw/master/git-t3st-setup | sh -s -- --tdir=...
+
 EOF
     chmod a+x "$_O_tdir"/hello-t3st.t
     echo 1>&2 "Created sample test $_O_tdir/hello-t3st.t"
@@ -113,7 +124,8 @@ __main() {
   $_O_run || exit 0
   __set_defaults
   [ $# -eq 0 ] || { unset Bad && : "${Bad?args "$*"}"; }
-  setup_git
+  if $_O_reset; then uninstall_git; fi
+  if $_O_setup; then setup_git; fi
 }
 
 __parse_args "$@"
