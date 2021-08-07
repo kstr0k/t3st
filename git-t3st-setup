@@ -39,9 +39,9 @@ setup_git() {
   local f
   if $_O_reset; then (set -x
     git remote remove kstr0k-t3st
-    git config --unset t3st.tdir
-    git config --unset alias.t3st-prove
-    git config --unset alias.t3st-setup
+    for u in t3st.tdir t3st.prove-shells alias.t3st-prove alias.t3st-setup; do
+      git config --unset "$u"
+    done
   )
   fi
   if git remote add kstr0k-t3st https://gitlab.com/kstr0k/t3st.git 2>/dev/null; then
@@ -57,7 +57,9 @@ setup_git() {
   fi
 
   [ "$_O_tdir" ] || { echo 1>&2 'Not setting up a t/ dir'; return 0; }
-  git config alias.t3st-prove '!f(){ prove "$@" "$(git config t3st.tdir)"; }; f'
+  git config t3st.prove-shells >/dev/null ||
+    git config t3st.prove-shells 'sh,bash,#dash,ash,busybox sh,bash --posix,bash44,bash32,zsh,zsh --emulate sh,zsh --emulate ksh,mksh,yash,posh'
+      git config alias.t3st-prove '!f(){ local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; printf "\nshell = %s\n\n" "$sh"; prove -e "$sh" "$@" "$(git config t3st.tdir)"; done; }; f'
   git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/master:git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
   echo 1>&2 'Added git aliases t3st-*'
   mkdir -p "$_O_tdir"
@@ -89,6 +91,7 @@ k9s0ke_t3st_leave
 # prove [...] [-r] t/
 # git t3st-prove [-...] # if set up
 # git t3st-setup        # update / repair
+# git config t3st.prove-shells
 EOF
     chmod a+x "$_O_tdir"/hello-t3st.t
     echo 1>&2 "Created sample test $_O_tdir/hello-t3st.t"
