@@ -5,13 +5,13 @@
 **TLDR: [`t3st.t`](t/t3st.t)** tests the framework and serves as an example &mdash; run `prove [-v]`. Run `git-t3st-setup` to add testing to an existing `git` project.
 
 `t3st` is a shell library to produce [TAP output](https://testanything.org/tap-specification.html). Use it to test shell functions, or any commands / scripts. It requires only a **POSIX shell** (but works under bash / dash / busybox / mksh / zsh / BSD sh / others) and a TAP framework (**`prove`** comes with any system perl). The defaults make tests easy to write without sacrificing correctness or flexibility. The test API completely avoids **namespace pollution**, which guarantees complete interoperability with any source. Features:
+- easy setup: adding to existing projects (`git-t3st-setup`), and running multiple tests under multiple shells (`git t3st-prove`) are one-liners
 - output + exit code testing, with precise final newline handling
-- full shell integration (tests can be requested conditionally / from loops / inside pipelines)
+- full shell integration (request tests conditionally / from loops / inside pipelines)
 - `errexit` ([`set -e`](#errexit)) and `set -u` tests
 - [subshells and pipes](#subshells-and-pipes)
 - repeated tests
 - TAP directives (`TODO`)
-- adding to existing projects is a one-liner
 
 *Notes*
 - development takes place at [GitLab `t3st`](https://gitlab.com/kstr0k/t3st) but you can also report issues at the [GitHub `t3st` mirror](https://github.com/kstr0k/t3st).
@@ -38,14 +38,17 @@ cd myproject
 URL=https://gitlab.com/kstr0k/t3st/-/raw/master/git-t3st-setup
 curl -s "$URL"| less
 curl -s "$URL" | sh  # or ... | sh -s -- --tdir=./mytests
-git t3st-prove [-v]  # from anywhere in repo
+prove [-e $shell] [-v]
+git t3st-prove [-v]  # from anywhere in repo, multiple shells
 git t3st-setup       # update / repair
+git config t3st.prove-shells 'sh,bash#,etc'  # save in repo's .git/config
 ```
 
 The script **adds to your `repo/.git/config`** file (displayed at startup), but won't overwrite unrelated (or subsequently modified) settings. Specifically, it
 * sets up a no-tags, no-push `t3st` git remote
-* creates a test directory (`--tdir=t/` by default) and copies the library to it directly from `git`. It also adds a `hello-t3st.t` example.
-* adds `git` aliases to run the tests (`git t3st-prove`) and to re-run itself (`git t3st-setup`). These aliases then conveniently work from anywhere in the repo.
+* creates a test directory (`--tdir=t/` by default) and copies the library to it directly from `git`. It also adds a `hello-t3st.t` example with instructions.
+* adds `git` aliases to run the tests (`git t3st-prove`) and to re-run itself (`git t3st-setup`). These aliases then conveniently work from anywhere in the repo. `t3st-prove [prove args...]` runs the tests in multiple shells (controlled by `git config t3st.prove-shells`).
+* special parameters: `--reset` (removes all `t3st`-related `git` settings as a first step); `--no-setup`: don't re-add `t3st` settings (combine with `--reset`)
 
 For manual installation, clone this repo and run `git-t3st-setup [--help]` from another project. Or just copy `k9s0ke_t3st_lib.sh` in your testsuite.
 
@@ -94,9 +97,9 @@ That is: source [`k9s0ke_t3st_lib.sh`](k9s0ke_t3st_lib.sh) (along with any teste
 ### `errexit`
 
 **Don't "set -e" globally** (i.e. outside a `_one` or `_me` call); this would make it impossible to properly record exit status, and the library code itself must run without `set -e`. Instead, either
-- set a **global errexit default** (`k9s0ke_t3st_g_errexit=true`) in the `.t` file or in the environment (`k9s0ke_t3st_g_errexit=true prove...`), OR
-- use `errexit=true` in individual `..._one` / `..._me` calls, OR
 - define a shortcut function (`TTT_e() { k9s0ke_t3st_one errexit=true $@; }`), OR
+- use `errexit=true` in individual `..._one` / `..._me` calls, OR
+- set a **global errexit default** (`k9s0ke_t3st_g_errexit=true`) in the `.t` file or in the environment (`k9s0ke_t3st_g_errexit=true prove...`), OR
 - `set -e` inside the tested code (or inside a `-- eval` argument).
 
 To run tests with **both `set -e` and `set +e`**, create a `...-e.t` file which adds a global `errexit` default, then sources the base `.t` file. The `-e.t` file can also define additional tests. [t/t3st-e.t](t/t3st-e.t) implements a more general version of this for making scripts usable as both commands and libraries.
@@ -161,6 +164,7 @@ This is also necessary if you call `k9s0ke_t3st_one` from a subshell. If the for
 - `k9s0ke_t3st_g_on_fail={bailout | skip-rest | ignore-rest }` (*experimental*): bailout or skip / ignore all tests after first (non-TODO) failure
 - `..._one hook_test_pre=...`: code to be `eval`'d before the test command (defaults to `k9s0ke_t3st_g_hook_test_pre`, or empty). The framework adds additional code to this hook (`errexit` / `set_pre` setup, redirects).
 - `..._one diff_on={ ok, | notok, }*`: print actual vs expected results (as TAP "# ..." comments) for some tests. The default is `notok`, or `$k9s0ke_t3st_g_diff_on` if defined. Use '`=ok,notok`' to print all diffs or '`=,`' to print none.
+- `..._one` supports key+=value arguments (which append to previous values, or the default). For example, you can have a `TTT_myfun` wrapper which calls `..._one` including a `spec=` argument, then call `TTT_myfun spec+='...'`
 
 ### Utilities
 
@@ -192,7 +196,7 @@ k9s0ke_t3st_me
 While the library itself only uses POSIX shell code, it can test scripts that require `bash` (or others) &mdash; the library code works in several shells. Use an appropriate shebang in your `.t` file, or pass `prove` a `-e` argument. The following is being used to test `t3st` itself (with no errors):
 
 ```
-for shell in dash bash 'busybox sh' mksh yash zsh posh
+for shell in dash bash bash44 bash32 'busybox sh' mksh yash zsh posh
   do printf '\n%s\n' "$shell"; prove -e "$shell"
 done
 ```
@@ -211,12 +215,14 @@ done
 - `posixcd` = off, causing directory names starting with `+/-` to be reinterpreted as dirstack entries
 - `posixargzero` = off (`$0` switches to the function name inside a function)
 
-Use `setopt [no]...` to change these options (e.g. `nonomatch`), or use `zsh --emulate sh` to turn on POSIX mode (emulate also works as a command). Use "`[ "$ZSH_VERSION" ]`" to test if running under zsh (possibly in emulation mode). Some of these options have shortnames, but they may not be available in zsh emulation mode.
+Use `setopt [no]...` to change these options (e.g. `nonomatch`), or use `zsh --emulate sh` to turn on POSIX mode (emulate also works as a command). Use "`[ "$ZSH_VERSION" ]`" to test if running under zsh (possibly in emulation mode). Some of these options have shortnames, but they may not be available in the various zsh emulation modes.
 
 ## See also
 
-- The [`mru-files.kak` test branch](https://gitlab.com/kstr0k/mru-files.kak/-/tree/test) has a self-contained `t3st` setup (add a `t3st` git remote, fetch `k9s0ke_t3st_lib.sh` without any checkout / clone).
-- [TAP consumers](https://testanything.org/consumers.html) if you want to go beyond the widely available `prove` command. It doesn't matter in what language they are written as long as they can parse TAP output. For example, ESR's [`tapview`](https://gitlab.com/esr/tapview/). You will still need to generate the TAP output in the first place, e.g. using `prove -a tap.tgz` (the `.t` files in the archive are, somewhat confusingly, TAP logs named like the tests that produced them).
+- Projects using `t3st`:
+  - [`bashaaparse`](https://gitlab.com/kstr0k/bashaaparse)'s `min-template.sh` (a sh / bash / zsh argument parser) has [tests](https://gitlab.com/kstr0k/bashaaparse/-/blob/master/t/min-template.t) that use temporary files, `pp=` post-processing and `hook_test_pre` to enforce complex conditions (grep in stderr, check globals assigned by code)
+  - The [`mru-files.kak` test branch](https://gitlab.com/kstr0k/mru-files.kak/-/tree/test) has a self-contained `t3st` + `git` setup, with separate worktrees / branches. That project includes a [POSIX shell library](https://gitlab.com/kstr0k/mru-files.kak/-/tree/master/k9s0ke-shlib), the [test file](https://gitlab.com/kstr0k/mru-files.kak/-/blob/test/t/k9s0ke-shlib/all.t) for which can also serve as inspiration.
+- [TAP consumers](https://testanything.org/consumers.html): if you want to go beyond the widely available `prove` command. The language they're written in doesn't matter as long as they can parse TAP output. For example, ESR's [`tapview`](https://gitlab.com/esr/tapview/). You'll still need to generate the TAP output in the first place, e.g. using `prove -a tap.tgz` (the `.t` files in the archive are, somewhat confusingly, TAP logs named like the tests that produced them).
 - other frameworks: [`shellspec`](https://github.com/shellspec/shellspec), [`sharness`](https://github.com/chriscool/sharness), [`bats-core`](https://github.com/bats-core/bats-core), [`shspec`](https://github.com/rylnd/shpec), [`assert.sh`](https://github.com/lehmannro/assert.sh)
 
 ## Copyright
