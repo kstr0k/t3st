@@ -62,17 +62,27 @@ k9s0ke_t3st_chk_running() {
 }
 k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   k9s0ke_t3st_chk_running
+  local k9s0ke_t3st__l_k
 
   # set defaults
   local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on=${k9s0ke_t3st_g_diff_on:-notok} k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
   local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_g_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=${k9s0ke_t3st_g_errexit:-false} k9s0ke_t3st_arg_set_pre=${k9s0ke_t3st_g_set_pre:-} k9s0ke_t3st_arg_repeat=${k9s0ke_t3st_g_repeat:-1}
 
+
   # load parameters
   [ $# -gt 0 ] || set -- --
   while [ $# -gt 0 ]; do
     [ "$1" != -- ] || { shift; break; }
-    local "k9s0ke_t3st_has_arg_${1%%=*}=true"
-    local "k9s0ke_t3st_arg_$1"; shift
+    k9s0ke_t3st__l_k="${1%%=*}"
+    case "$k9s0ke_t3st__l_k" in
+      *'+')
+        k9s0ke_t3st__l_k=${k9s0ke_t3st__l_k%'+'}
+        eval k9s0ke_t3st__l_v="\${k9s0ke_t3st_arg_$k9s0ke_t3st__l_k:-}"
+        local "k9s0ke_t3st_arg_$k9s0ke_t3st__l_k=$k9s0ke_t3st__l_v${1#*=}"
+        ;;
+      *) local "k9s0ke_t3st_arg_$1" ;;
+    esac
+    local "k9s0ke_t3st_has_arg_$k9s0ke_t3st__l_k=true"; shift
   done
   [ $# -gt 0 ] || set -- cat
 
