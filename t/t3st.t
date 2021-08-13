@@ -64,10 +64,10 @@ TTT out=XX set_pre=+u spec=set+u \
   -- eval 'printf "$T3STNONE"; echo XX' 2>/dev/null
 TTT rc='-ne 0' nl=false set_pre=-u spec=set-u \
   -- eval 'printf "$T3STNONE"; echo XX' 2>/dev/null
-if [ "${ZSH_VERSION:-}" ]; then k9s0ke_t3st_skip 1 'zsh: set -f is set -F'; else
-TTT out='*' set_pre=-f hook_test_pre='cd /' spec='set_pre' \
+TTT out='*' set_pre='-o noglob' hook_test_pre='cd /' spec='set_pre="-o longname"' \
   -- eval 'echo *'
-fi
+
+k9s0ke_t3st_skip 1 'skip() demo'
 
 TTT spec='# TODO : fails without global k9s0ke_t3st_g_errexit=true' \
   rc='-ne 0' nl=false \
