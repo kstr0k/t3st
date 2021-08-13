@@ -1,10 +1,10 @@
 #!/bin/sh
 set -u
 
-# convenient, but watch namespace pollution
-TTT() { k9s0ke_t3st_one "$@"; }
-
-run_tests() {  # this script may be used in library mode, see end
+# TTT = .t file namespace (arbitrary)
+# ..._tests runs after ..._setup
+TTT__tfile_tests() {  # this script may be used in library mode, see end
+local TTT__tfile_me; TTT__tfile_me=$1; shift
 k9s0ke_t3st_enter
 
 # minimal tests; defaults: rc=0 out='' nl=true infile=/dev/null
@@ -80,33 +80,43 @@ TTT spec='# TODO : fails with global k9s0ke_t3st_g_errexit' \
 TTT out=Done spec=Done \
   -- echo Done
 
+case "${1:-}" in (--help|-h)
+  shift; TTT__tfile_help "$TTT__tfile_me" ;;  # TODO: pass "$@": posh ${1+"$@"}
+esac
 k9s0ke_t3st_leave
 }
 
+TTT__tfile_setup() {  # args: testdir
+  . "${1%/*}"/../k9s0ke_t3st_lib.sh  # $me has '/'-es
+  TTT()    { k9s0ke_t3st_one "$@"; }
+  TTT_ee() { k9s0ke_t3st_one errexit=true  "$@"; }
+  TTT_de() { k9s0ke_t3st_one errexit=false "$@"; }
+  TTTnl=$k9s0ke_t3st_nl
+}
+
+TTT__tfile_runme() {
+  local TTT__tfile_me; TTT__tfile_me=$1; shift
+  case "$TTT__tfile_me" in (/*) ;; (*) TTT__tfile_me=$PWD/$TTT__tfile_me ;; esac
+  set -- "$TTT__tfile_me" "$@"
+  set -e; TTT__tfile_setup "$@"
+  set +e; TTT__tfile_tests "$@"
+}
+
+TTT__tfile_help() {
+cat <<EOHELP
+# Ran "$@", k9s0ke_t3st_g_errexit=${k9s0ke_t3st_g_errexit:-}
+EOHELP
+}
+
+### script entrypoint
+### see https://gitlab.com/kstr0k/t3st/-/wikis/shell/dollar0-source
+
 # could use 'if ! type k9s0ke_t3st_me' but for posh (no type)
 if [ "${1:-}" != '--no-run' ]; then  # script-mode top-level only
-  . "$(dirname -- "$0")"/../k9s0ke_t3st_lib.sh
-  [ $# -gt 0 ] || set -- --  # posh workaround
-  run_tests "$@"
-# else library mode: sourced, assume caller setup
+  # some shells (e.g. posh) break on "$@" if argc==0
+  [ $# -gt 0 ] || set -- --
+  TTT__tfile_runme "$0" "$@"
+else shift # library mode: sourced, assume caller setup
 fi
-
-# TLDR: only use script mode, top-level $0; caller does all setup in libmode
-# mydir=$(dirname -- "$0"); mybasename=${0##*/}
-#
-# in script mode (invoked by './myscript' or 'shell myscript')
-#   $0 = script; except zsh: $ZSH_ARGZERO = myscript, $0 inside f() = 'f'
-# in library mode (invoked by '. myscript')
-#   $0 = caller (zsh: $ZSH_ARGZERO instead); may be /bin/*sh!
-#   POSIX sh: impossible to get 'myscript'
-#   bash: $BASH_SOURCE = myscript
-#   zsh: top-level $0 = myscript; ${(%):-%x} anywhere but may confuse others
-
-# Don't "optimize" 'dirname $0' via '${0%/*}/'; consider
-#   sh myscript  # (or myscript in path): $0 = 'myscript' (no /)
-# The following work (zsh: top-level script-mode only, or even more code)
-#   "${0##*/}" = basename
-#   "${0%"${0##*/}"}"/ = dirname
-#   # final / needed: consider /myscript
 
 # vim: set ft=sh:
