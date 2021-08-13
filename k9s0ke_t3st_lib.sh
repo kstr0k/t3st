@@ -240,7 +240,7 @@ k9s0ke_t3st_enter() {  # args: [plan]
     k9s0ke_t3st_plan_printed=true
   fi
   k9s0ke_t3st_cnt=0
-  k9s0ke_t3st_tmp_dir=$(mktemp -d)
+  k9s0ke_t3st_tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}"/t3st.XXXXXX)
   k9s0ke_t3st_tmp_cnt=0
 
   touch "$k9s0ke_t3st_tmp_dir"/.t3st
