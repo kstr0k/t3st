@@ -25,9 +25,8 @@ TTT spec='' nl=false outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}
 TTT spec='' nl=true outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}=/etc/hosts, nl=true ignored'
 fi
 
-k9s0ke_t3st_me spec='_me  -- args  # TODO : may fail with set -e (need symlinks)' \
-  -- eval 'echo Hello world && false'
-k9s0ke_t3st_me spec='_me (no args) # TODO : may fail with set -e (need symlinks)'
+k9s0ke_t3st_me "$TTT__tfile_me" exec='echo Hello world && false' spec='_me exec='
+k9s0ke_t3st_me "$TTT__tfile_me" spec='_me (.exec)'
 
 TTT rc=2 out=X spec='cmd=eval exit 2' \
   -- eval 'echo X; exit 2'
