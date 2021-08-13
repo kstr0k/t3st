@@ -189,23 +189,25 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
 }
 
 k9s0ke_t3st_me() {
-  [ $# -gt 0 ] || set -- cat  # posh workaround
-  if [ $# -eq 0 ]; then
-    if test -r "$0".exec; then
-      set -- "$0".exec
+  local k9s0ke_t3st__l_me; k9s0ke_t3st__l_me=$1; shift
+  case "${1:-}" in
+    exec=*) set -- "$@" -- eval "${1#exec=}" ;;
+    *)
+    if test -r "$k9s0ke_t3st__l_me".exec; then
+      set -- "$k9s0ke_t3st__l_me".exec
       test -x "$1" || set -- sh "$@"
       set -- -- "$@"
     else
       k9s0ke_t3st_bailout 'no command and no .exec file found'
-    fi
-  fi
+    fi ;;
+  esac
   (
-  if [ -r "$0".in ]; then exec <"$0".in; else exec </dev/null; fi
+  if [ -r "$k9s0ke_t3st__l_me".in ]; then exec <"$k9s0ke_t3st__l_me".in; else exec </dev/null; fi
   local k9s0ke_t3st_out=
-  if [ -r "$0".out ]; then
-    set -- outfile="$0".out "$@"
+  if [ -r "$k9s0ke_t3st__l_me".out ]; then
+    set -- outfile="$k9s0ke_t3st__l_me".out "$@"
   fi
-  k9s0ke_t3st_one rc="$(if test -r "$0".rc; then cat "$0".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" nl=false cnt=false infile=- "$@"
+  k9s0ke_t3st_one rc="$(if test -r "$k9s0ke_t3st__l_me".rc; then cat "$k9s0ke_t3st__l_me".rc; else echo 0; fi)" out="$k9s0ke_t3st_out" nl=false cnt=false infile=- "$@"
   )
   k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
