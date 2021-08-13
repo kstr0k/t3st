@@ -95,6 +95,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   if $k9s0ke_t3st_arg_errexit  # after -> overrides
     then k9s0ke_t3st_arg_set_pre="$k9s0ke_t3st_arg_set_pre -e"
     else k9s0ke_t3st_arg_set_pre="$k9s0ke_t3st_arg_set_pre +e"
+    # set_pre never empty
   fi
   k9s0ke_t3st_arg_hook_test_pre="set $k9s0ke_t3st_arg_set_pre$k9s0ke_t3st_nl$k9s0ke_t3st_arg_hook_test_pre"
   if [ "$k9s0ke_t3st_arg_outfile" ]; then  # outfile= overrides out=, nl=
@@ -126,6 +127,8 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   # loop: execute, load output and $?
   k9s0ke_t3st_repeat_cnt=1
   while :; do
+  ! "${k9s0ke_t3st_g_keep_tmp:-false}" ||
+    printf '%s\n' "$k9s0ke_t3st_arg_hook_test_pre" "$@" >"$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".cmd
   k9s0ke_t3st_out=$(k9s0ke_t3st_slurp_exec "$k9s0ke_t3st_arg_hook_test_pre" "$@" 2>"$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".stderr)
   k9s0ke_t3st_slurp_split "$k9s0ke_t3st_out" k9s0ke_t3st_out k9s0ke_t3st_rc
 
@@ -138,9 +141,9 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   fi
 
   # figure out results
-  k9s0ke_t3st_ok=true
-  # zsh would need 'setopt -y' (shwordsplit), but let's eval and be done
-  eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' && [ "$k9s0ke_t3st_out" = "${k9s0ke_t3st_arg_out}" ] || k9s0ke_t3st_ok=false
+  k9s0ke_t3st_ok=false
+  # zsh would need 'setopt shwordsplit', but let's eval and be done
+  ! eval '[ $k9s0ke_t3st_rc '"$k9s0ke_t3st_arg_rc"' ]' || [ "$k9s0ke_t3st_out" != "${k9s0ke_t3st_arg_out}" ] || k9s0ke_t3st_ok=true
   if $k9s0ke_t3st_ok && [ "$k9s0ke_t3st_repeat_cnt" -lt "$k9s0ke_t3st_arg_repeat" ]; then
     k9s0ke_t3st_repeat_cnt=$(( k9s0ke_t3st_repeat_cnt + 1 ))
   else break
@@ -180,8 +183,8 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   fi
 
   # cleanup, prepare next test
-  (rm -f "$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".*) 2>/dev/null ||
-    :  # zsh yaks if none, fails 'set -e' (but errexit=off here); setopt -3
+  "${k9s0ke_t3st_g_keep_tmp:-false}" || (rm -f "$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".*) 2>/dev/null ||
+    :  # zsh yaks if none, fails 'set -e' (but errexit=off here); setopt nonomatch
   ! $k9s0ke_t3st_arg_cnt || k9s0ke_t3st_cnt=$(( k9s0ke_t3st_cnt + 1 ))
 }
 
@@ -254,6 +257,7 @@ k9s0ke_t3st_enter() {  # args: [plan]
 k9s0ke_t3st_leave() {  # args: [plan]
   [ $# -gt 0 ] || set -- "1..$k9s0ke_t3st_cnt"
   $k9s0ke_t3st_plan_printed || printf '%s\n' "$1"
-  [ -d "$k9s0ke_t3st_tmp_dir" ] && rm -rf "$k9s0ke_t3st_tmp_dir"
+  ! [ -d "$k9s0ke_t3st_tmp_dir" ] || "${k9s0ke_t3st_g_keep_tmp:-false}" ||
+    rm -rf "$k9s0ke_t3st_tmp_dir"
   k9s0ke_t3st_tmp_dir=
 }
