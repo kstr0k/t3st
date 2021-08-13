@@ -1,15 +1,10 @@
 #!/bin/sh
 set -u
-[ $# -gt 0 ] || set -- --  # posh workaround
-
-. "${0%/*}"/../k9s0ke_t3st_lib.sh
 
 # convenient, but watch namespace pollution
 TTT() { k9s0ke_t3st_one "$@"; }
 
-# make script usable as library -- not required in general
-# we use this in t3st-e.t
-run_tests() {
+run_tests() {  # this script may be used in library mode, see end
 k9s0ke_t3st_enter
 
 # minimal tests; defaults: rc=0 out='' nl=true infile=/dev/null
@@ -87,4 +82,31 @@ TTT out=Done spec=Done \
 
 k9s0ke_t3st_leave
 }
-if [ "${1:-}" != --no-run ]; then run_tests "$@"; fi
+
+# could use 'if ! type k9s0ke_t3st_me' but for posh (no type)
+if [ "${1:-}" != '--no-run' ]; then  # script-mode top-level only
+  . "$(dirname -- "$0")"/../k9s0ke_t3st_lib.sh
+  [ $# -gt 0 ] || set -- --  # posh workaround
+  run_tests "$@"
+# else library mode: sourced, assume caller setup
+fi
+
+# TLDR: only use script mode, top-level $0; caller does all setup in libmode
+# mydir=$(dirname -- "$0"); mybasename=${0##*/}
+#
+# in script mode (invoked by './myscript' or 'shell myscript')
+#   $0 = script; except zsh: $ZSH_ARGZERO = myscript, $0 inside f() = 'f'
+# in library mode (invoked by '. myscript')
+#   $0 = caller (zsh: $ZSH_ARGZERO instead); may be /bin/*sh!
+#   POSIX sh: impossible to get 'myscript'
+#   bash: $BASH_SOURCE = myscript
+#   zsh: top-level $0 = myscript; ${(%):-%x} anywhere but may confuse others
+
+# Don't "optimize" 'dirname $0' via '${0%/*}/'; consider
+#   sh myscript  # (or myscript in path): $0 = 'myscript' (no /)
+# The following work (zsh: top-level script-mode only, or even more code)
+#   "${0##*/}" = basename
+#   "${0%"${0##*/}"}"/ = dirname
+#   # final / needed: consider /myscript
+
+# vim: set ft=sh:
