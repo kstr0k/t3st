@@ -1,11 +1,12 @@
 #!/bin/sh
 set -u
 
+# this script may be used in library mode, see end
+
 # TTT = .t file namespace (arbitrary)
-# ..._tests runs after ..._setup
-TTT__tfile_tests() {  # this script may be used in library mode, see end
+# ..._tests runs after ..._setup (has TTT* defs)
+TTT__tfile_tests() {
 local TTT__tfile_me; TTT__tfile_me=$1; shift
-k9s0ke_t3st_enter
 
 # minimal tests; defaults: rc=0 out='' nl=true infile=/dev/null
 TTT spec='minimal #1, [nl=true]' \
@@ -80,29 +81,35 @@ TTT out=Done spec=Done \
 case "${1:-}" in (--help|-h)
   shift; TTT__tfile_help "$TTT__tfile_me" ;;  # TODO: pass "$@": posh ${1+"$@"}
 esac
-k9s0ke_t3st_leave
 }
 
-TTT__tfile_setup() {  # args: testdir
-  . "${1%/*}"/../k9s0ke_t3st_lib.sh  # $me has '/'-es
+TTT__tfile_setup() {  # args: testdir-abs-path ...
+  . "${1%/*}"/../k9s0ke_t3st_lib.sh
   TTT()    { k9s0ke_t3st_one "$@"; }
   TTT_ee() { k9s0ke_t3st_one errexit=true  "$@"; }
   TTT_de() { k9s0ke_t3st_one errexit=false "$@"; }
   TTTnl=$k9s0ke_t3st_nl
 }
 
-TTT__tfile_runme() {
+TTT__tfile_help() {
+cat <<EOHELP
+# Called as: '$*' (k9s0ke_t3st_g_errexit=${k9s0ke_t3st_g_errexit:-})
+EOHELP
+}
+
+TTT__tfile_runme() {  # args: abs-path-to-t-file
   local TTT__tfile_me; TTT__tfile_me=$1; shift
   case "$TTT__tfile_me" in (/*) ;; (*) TTT__tfile_me=$PWD/$TTT__tfile_me ;; esac
   set -- "$TTT__tfile_me" "$@"
-  set -e; TTT__tfile_setup "$@"
-  set +e; TTT__tfile_tests "$@"
-}
-
-TTT__tfile_help() {
-cat <<EOHELP
-# Ran "$@", k9s0ke_t3st_g_errexit=${k9s0ke_t3st_g_errexit:-}
-EOHELP
+  set -e; TTT__tfile_setup "$@"; set +e
+  case "${2:-}" in
+    (--help|-h) shift
+      TTT__tfile_help "$TTT__tfile_me"; echo '1..0 # Skipped: help requested' ;;
+    (*)
+      k9s0ke_t3st_enter
+      TTT__tfile_tests "$@"
+      k9s0ke_t3st_leave ;;
+  esac
 }
 
 ### script entrypoint
