@@ -3,7 +3,7 @@ set -ue
 
 # Adds a git remote for `t3st`. Sets up a test dir.
 
-_O_run=true _O_tdir= _O_fetch=true _O_hello= _O_reset=false _O_setup=true
+_O_run=true _O_tdir= _O_fetch=true _O_hello= _O_reset=false _O_setup=true _O_t3st_branch=master
 
 GCDIR=$(git rev-parse --git-common-dir) || { unset Not; : "${Not?in a git repo}"; }
 echo 1>&2 'Configuring t3st in git config:'
@@ -50,12 +50,12 @@ uninstall_git() (
 )  # subshell function
 
 setup_git() {
-  local f
+  local f d
   if git remote add kstr0k-t3st https://gitlab.com/kstr0k/t3st.git 2>/dev/null; then
     #git config remote.kstr0k-t3st.fetch '+refs/tags/*:refs/tags/t3st/*'
     : "${_O_hello:=true}"
     git config remote.kstr0k-t3st.tagOpt --no-tags
-    git remote set-branches kstr0k-t3st master
+    git remote set-branches kstr0k-t3st "$_O_t3st_branch"
     git remote set-url --push kstr0k-t3st ''
     git fetch kstr0k-t3st
     echo 1>&2 'Added t3st remote'; git remote -v 1>&2
@@ -65,49 +65,27 @@ setup_git() {
 
   [ "$_O_tdir" ] || { echo 1>&2 'Not setting up a t/ dir'; return 0; }
   git config t3st.prove-shells >/dev/null ||
-    git config t3st.prove-shells 'sh,bash,#dash,ash,busybox sh,bash --posix,bash44,bash32,zsh,zsh --emulate sh,zsh --emulate ksh,mksh,yash,posh'
-      git config alias.t3st-prove '!f(){ local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; printf "\n# shell = %s\n\n" "$sh"; prove -e "$sh" "$@" "$(git config t3st.tdir)"; done; }; f'
-  git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/master:git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
+    git config t3st.prove-shells 'sh,bash,busybox sh#,yash,mksh,dash,bash --posix,bash44,bash32,zsh,zsh --emulate sh,zsh --emulate ksh,posh'
+  git config alias.t3st-prove '!f(){ local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; eval "$sh -c exit" 2>/dev/null || continue; printf "\n# shell = %s\n\n" "$sh"; prove -e "$sh" "$@" "$(git config t3st.tdir)"; done; }; f'
+  git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/'"$_O_t3st_branch"':git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
   echo 1>&2 'Added git aliases t3st-*'
-  mkdir -p "$_O_tdir"
-  for f in k9s0ke_t3st_lib.sh; do
+  mkdir -p "$_O_tdir/t3st-lib"
+  for f in 't3st-lib/k9s0ke_t3st_lib.sh'= 't3st-hello.t'=t/ 't3st.mk'=t/ 't3st-lib/t3st-ttt0.sh'=t/t3st-lib/ 't3st-lib/t3st-new.t.0'=t/t3st-lib/ 't3st-e.t'=t/ ; do
+    case "$f" in (*/t3st-hello.t) [ "$_O_hello" ] || continue ;; esac
+    d=${f##*=}; f=${f%=*}
     if [ -r "$_O_tdir"/"$f" ]; then
       echo 1>&2 "# rm -f \"$_O_tdir/$f\"  # exists; remove & re-run to update"
     else
-      (set -x; git show kstr0k-t3st/master:"$f" >"$_O_tdir"/"$f")
+      (set -x; git show kstr0k-t3st/"$_O_t3st_branch":"$d${f##*/}" >"$_O_tdir"/"$f")
     fi
   done
   echo 1>&2 "$_O_tdir set up for t3st tests."
-  if ! [ -r "$_O_tdir"/hello-t3st.t ] && ${_O_hello:-false}; then
-    cat >"$_O_tdir"/hello-t3st.t <<'EOF'
-#!/bin/sh
-. "${0%/*}"/k9s0ke_t3st_lib.sh
-#set -u  # recommended.      # DON'T `set -e` globally
-#k9s0ke_t3st_g_errexit=true  # applies to all tests
-
-# prove [-v] [-e $shell] [t/hello-t3st.t]
-# git t3st-prove [...]
-# git t3st-setup  # update / repair
-# git config t3st.prove-shells 'sh,bash,busybox sh,mksh#,dash,zsh,zsh --emulate sh,yash'
-# git -c t3st.prove-shells='override..' t3st.prove [...]
-
-TTT()   { k9s0ke_t3st_one "$@"; }
-TTT_e() { k9s0ke_t3st_one errexit=true "$@"; }
-k9s0ke_t3st_enter
-
-TTT out='Hello t3st' diff_on=ok,notok \
-  -- echo Hello t3st
-
-k9s0ke_t3st_leave
-
-## set up a different test dir:
-# curl -s https://gitlab.com/kstr0k/t3st/-/raw/master/git-t3st-setup | sh -s -- --tdir=...
-
-EOF
-    chmod a+x "$_O_tdir"/hello-t3st.t
-    echo 1>&2 "Created sample test $_O_tdir/hello-t3st.t"
+  (chmod a+x "$_O_tdir"/*t3st*.t || :)
+  if [ -r "$_O_tdir"/t3st-hello.t ] && ${_O_hello:-false}; then
+    echo 1>&2 "Testing sample $_O_tdir/t3st-hello.t"
     local prove; prove=$(command -v prove)
-    [ -z "$prove" ] || (set -x; prove -e /bin/sh -v "$_O_tdir"/hello-t3st.t)
+    [ -z "$prove" ] ||
+      (set -x; prove -e /bin/sh -v "$_O_tdir"/t3st-hello.t :: --help)
   fi
 }
 
