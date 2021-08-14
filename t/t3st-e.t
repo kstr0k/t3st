@@ -1,4 +1,8 @@
 #!/bin/sh
+
+# if named TEST-e.t, runs TEST.t in the same shell but in errexit mode
+# assumes TEST.t based on t3st-lib/t3st-ttt0.sh, or at least has a ..._entry()
+
 k9s0ke_t3st_g_errexit=true
 
 if [ "${1:-}" != '--no-run' ]; then
