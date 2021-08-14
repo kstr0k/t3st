@@ -87,6 +87,13 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   [ $# -gt 0 ] || set -- cat
 
   # process parameters
+  [ "$k9s0ke_t3st_arg_spec" ] || k9s0ke_t3st_arg_spec="$1"
+  [ -z "$k9s0ke_t3st_arg_todo" ] ||
+    k9s0ke_t3st_arg_spec="$k9s0ke_t3st_arg_spec # TODO : $k9s0ke_t3st_arg_todo"
+  if "$k9s0ke_t3st__broken_eval_sete" && "${k9s0ke_t3st_has_arg_errexit:-false}" && "$k9s0ke_t3st_arg_errexit"; then
+    k9s0ke_t3st_skip 1 "$k9s0ke_t3st_arg_spec: errexit unsupported in this shell"
+    return 0
+  fi
   case "$k9s0ke_t3st_arg_rc" in
     ''|*' '*) ;;  # '' will ignore $rc
     *) k9s0ke_t3st_arg_rc="-eq $k9s0ke_t3st_arg_rc" ;;
@@ -115,9 +122,6 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     k9s0ke_t3st_arg_hook_test_pre='exec <"$k9s0ke_t3st_arg_infile"
 '${k9s0ke_t3st_arg_hook_test_pre}
   fi
-  [ "$k9s0ke_t3st_arg_spec" ] || k9s0ke_t3st_arg_spec="$1"
-  [ -z "$k9s0ke_t3st_arg_todo" ] ||
-    k9s0ke_t3st_arg_spec="$k9s0ke_t3st_arg_spec # TODO : $k9s0ke_t3st_arg_todo"
   if [ -r "$k9s0ke_t3st_tmp_dir"/.t3st.fail ]; then
     case "${k9s0ke_t3st_g_on_fail:-}" in
       bailout)      k9s0ke_t3st_bailout "on_fail = bailout" ;;
@@ -246,6 +250,7 @@ k9s0ke_t3st_enter() {  # args: [plan]
   k9s0ke_t3st_cnt=0
   k9s0ke_t3st_tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}"/t3st.XXXXXX)
   k9s0ke_t3st_tmp_cnt=0
+  k9s0ke_t3st__broken_eval_sete=$(bad=$(eval 'set -e'; false; echo true); echo "${bad:-false}")
 
   touch "$k9s0ke_t3st_tmp_dir"/.t3st
   [ -r "$k9s0ke_t3st_tmp_dir"/.t3st ] ||
