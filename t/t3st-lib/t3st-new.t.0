@@ -1,0 +1,32 @@
+#!/bin/sh
+set -u
+
+# this template is copied to new tests
+# make -C t -f t3st.mk new.t
+
+# TTT = .t file namespace
+# uses TTT* defs in t/t3st-ttt0.sh
+TTT__tfile_tests() {  # args: abs-path-to-t-file ...
+
+TTT nl=false todo='add some tests'
+
+}
+
+TTT__tfile_redef() {
+  : # redefine TTT__tfile_* if needed
+  # TTT__tfile_setup() { TTT__tfile_setup_mytest "$@"; }
+}
+
+### script entry point
+
+TTT__tfile_entry() {  # args: $0 + "$@" from .t invocation
+  . "$(dirname -- "$1")"/t3st-lib/t3st-ttt0.sh  # dirname: keep, or it gets ugly
+  TTT__tfile_redef "$@"
+  TTT__tfile_runme "$@"
+}
+
+if [ "${1:-}" != '--no-run' ]; then
+  [ $# -gt 0 ] || set -- --
+  TTT__tfile_entry "$0" "$@"
+else shift # library mode: sourced, assume caller setup
+fi
