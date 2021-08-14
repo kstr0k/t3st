@@ -49,6 +49,16 @@ uninstall_git() (
   done
 )  # subshell function
 
+copy_repo_file() {
+  local src f; src=$1 f=$2; shift 2
+  case "$src" in (*/|'') src=$src${f##*/} ;; esac
+  if [ -r "$_O_tdir"/"$f" ]; then
+    echo 1>&2 "# rm -f \"$_O_tdir/$f\"  # exists; remove & re-run to update"
+  else
+    (set -x; git show kstr0k-t3st/"$_O_t3st_branch":"$src" >"$_O_tdir"/"$f")
+  fi
+}
+
 setup_git() {
   local f d
   if git remote add kstr0k-t3st https://gitlab.com/kstr0k/t3st.git 2>/dev/null; then
@@ -70,14 +80,10 @@ setup_git() {
   git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/'"$_O_t3st_branch"':git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
   echo 1>&2 'Added git aliases t3st-*'
   mkdir -p "$_O_tdir/t3st-lib"
-  for f in 't3st-lib/k9s0ke_t3st_lib.sh'= 't3st-hello.t'=t/ 't3st.mk'=t/ 't3st-lib/t3st-ttt0.sh'=t/t3st-lib/ 't3st-lib/t3st-new.t.0'=t/t3st-lib/ 't3st-e.t'=t/ ; do
+  for f in 't3st-lib/k9s0ke_t3st_lib.sh'= 't3st-hello.t'=t/ 't3st.mk'=t/ 't3st-lib/t3st-ttt0.sh'=t/t3st-lib/ 't3st-lib/t3st-new.t.0'=t/t3st-lib/ 't3st-lib/t3st-e.t.0'='t/t3st-e.t' ; do
     case "$f" in (*/t3st-hello.t) [ "$_O_hello" ] || continue ;; esac
     d=${f##*=}; f=${f%=*}
-    if [ -r "$_O_tdir"/"$f" ]; then
-      echo 1>&2 "# rm -f \"$_O_tdir/$f\"  # exists; remove & re-run to update"
-    else
-      (set -x; git show kstr0k-t3st/"$_O_t3st_branch":"$d${f##*/}" >"$_O_tdir"/"$f")
-    fi
+    copy_repo_file "$d" "$f"
   done
   echo 1>&2 "$_O_tdir set up for t3st tests."
   (chmod a+x "$_O_tdir"/*t3st*.t || :)
