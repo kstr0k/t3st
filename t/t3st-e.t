@@ -5,5 +5,6 @@ if [ "${1:-}" != '--no-run' ]; then
   [ $# -gt 0 ] || set -- --
   set -- --no-run "$@"
   . "${0%-e.t}.t"
-  TTT__tfile_runme "${0%-e.t}.t" "$@"
+  TTT__tfile_entry "${0%-e.t}.t" "$@"
+else shift # library mode: sourced, assume caller setup
 fi

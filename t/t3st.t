@@ -4,7 +4,7 @@ set -u
 # this script may be used in library mode, see end
 
 # TTT = .t file namespace (arbitrary)
-# ..._tests runs after ..._setup (has TTT* defs)
+# uses TTT* defs in t/t3st-ttt0.sh
 TTT__tfile_tests() {
 local TTT__tfile_me; TTT__tfile_me=$1; shift
 
@@ -83,43 +83,19 @@ case "${1:-}" in (--help|-h)
 esac
 }
 
-TTT__tfile_setup() {  # args: testdir-abs-path ...
-  . "${1%/*}"/../k9s0ke_t3st_lib.sh
-  TTT()    { k9s0ke_t3st_one "$@"; }
-  TTT_ee() { k9s0ke_t3st_one errexit=true  "$@"; }
-  TTT_de() { k9s0ke_t3st_one errexit=false "$@"; }
-  TTTnl=$k9s0ke_t3st_nl
-}
-
-TTT__tfile_help() {
-cat <<EOHELP
-# Called as: '$*' (k9s0ke_t3st_g_errexit=${k9s0ke_t3st_g_errexit:-})
-EOHELP
-}
-
-TTT__tfile_runme() {  # args: abs-path-to-t-file
-  local TTT__tfile_me; TTT__tfile_me=$1; shift
-  case "$TTT__tfile_me" in (/*) ;; (*) TTT__tfile_me=$PWD/$TTT__tfile_me ;; esac
-  set -- "$TTT__tfile_me" "$@"
-  set -e; TTT__tfile_setup "$@"; set +e
-  case "${2:-}" in
-    (--help|-h) shift
-      TTT__tfile_help "$TTT__tfile_me"; echo '1..0 # Skipped: help requested' ;;
-    (*)
-      k9s0ke_t3st_enter
-      TTT__tfile_tests "$@"
-      k9s0ke_t3st_leave ;;
-  esac
-}
-
 ### script entrypoint
 ### see https://gitlab.com/kstr0k/t3st/-/wikis/shell/dollar0-source
 
-# could use 'if ! type k9s0ke_t3st_me' but for posh (no type)
+TTT__tfile_entry() {  # args: $0 + "$@" from .t invocation
+  . "$(dirname -- "$1")"/t3st-lib/t3st-ttt0.sh  # DON'T "optimize" dirname (gotchas)
+  # override here if needed
+  TTT__tfile_runme "$@"
+}
+
 if [ "${1:-}" != '--no-run' ]; then  # script-mode top-level only
   # some shells (e.g. posh) break on "$@" if argc==0
   [ $# -gt 0 ] || set -- --
-  TTT__tfile_runme "$0" "$@"
+  TTT__tfile_entry "$0" "$@"
 else shift # library mode: sourced, assume caller setup
 fi
 
