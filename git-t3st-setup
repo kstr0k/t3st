@@ -41,6 +41,7 @@ __parse_args() {
 }
 __process_arg() { return 1; }
 
+setx() ( set -x; "$@" )
 uninstall_git() (
   set -x
   git remote remove kstr0k-t3st
@@ -55,7 +56,7 @@ copy_repo_file() {
   if [ -r "$_O_tdir"/"$f" ]; then
     echo 1>&2 "# rm -f \"$_O_tdir/$f\"  # exists; remove & re-run to update"
   else
-    (set -x; git show kstr0k-t3st/"$_O_t3st_branch":"$src" >"$_O_tdir"/"$f")
+    setx git show kstr0k-t3st/"$_O_t3st_branch":"$src" >"$_O_tdir"/"$f"
   fi
 }
 
@@ -70,14 +71,15 @@ setup_git() {
     git fetch kstr0k-t3st
     echo 1>&2 'Added t3st remote'; git remote -v 1>&2
   else
-    ! $_O_fetch || (set -x; git fetch kstr0k-t3st)
+    ! $_O_fetch || setx git fetch kstr0k-t3st
   fi
 
   [ "$_O_tdir" ] || { echo 1>&2 'Not setting up a t/ dir'; return 0; }
   git config t3st.prove-shells >/dev/null ||
-    git config t3st.prove-shells 'sh,bash,busybox sh#,yash,mksh,dash,bash --posix,bash44,bash32,zsh,zsh --emulate sh,zsh --emulate ksh,posh'
-  git config alias.t3st-prove '!f(){ local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; eval "$sh -c exit" 2>/dev/null || continue; printf "\n# shell = %s\n\n" "$sh"; prove -e "$sh" "$@" "$(git config t3st.tdir)"; done; }; f'
-  git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/'"$_O_t3st_branch"':git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
+    setx git config t3st.prove-shells 'sh,bash,busybox sh#,yash,mksh,dash,bash --posix,bash44,bash32,zsh,zsh --emulate sh,zsh --emulate ksh,posh'
+  setx git config alias.t3st-prove '!f(){ local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; eval "$sh -c exit" 2>/dev/null || continue; printf "\n# shell = %s\n\n" "$sh"; prove -e "$sh" "$@" "$(git config t3st.tdir)"; done; }; f'
+  setx git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/'"$_O_t3st_branch"':git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
+  setx git config alias.t3st-new '!f(){ make -C "$(git config t3st.tdir)" -f t3st.mk new; }; f'
   echo 1>&2 'Added git aliases t3st-*'
   mkdir -p "$_O_tdir/t3st-lib"
   for f in 't3st-lib/k9s0ke_t3st_lib.sh'= 't3st-hello.t'=t/ 't3st.mk'=t/ 't3st-lib/t3st-ttt0.sh'=t/t3st-lib/ 't3st-lib/t3st-new.t.0'=t/t3st-lib/ 't3st-lib/t3st-e.t.0'='t/t3st-e.t' ; do
@@ -85,6 +87,7 @@ setup_git() {
     d=${f##*=}; f=${f%=*}
     copy_repo_file "$d" "$f"
   done
+  [ -r "$_O_tdir"/Makefile ] || ln -s t3st.mk "$_O_tdir"/Makefile
   echo 1>&2 "$_O_tdir set up for t3st tests."
   (chmod a+x "$_O_tdir"/*t3st*.t || :)
   if [ -r "$_O_tdir"/t3st-hello.t ] && ${_O_hello:-false}; then
@@ -100,7 +103,7 @@ __set_defaults() {
   [ "$_O_tdir" != false ] || _O_tdir=
   if [ "$_O_tdir" ]; then
     case "$_O_tdir" in /*) ;; *) _O_tdir=$(pwd -P)/$_O_tdir ;; esac
-    (set -x; git config t3st.tdir "$_O_tdir")
+    setx git config t3st.tdir "$_O_tdir"
   fi
 }
 
