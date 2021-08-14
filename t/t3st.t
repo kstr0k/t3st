@@ -56,10 +56,8 @@ TTT out=XX infile=- cnt=false spec='infile=- pipe' \
   -- eval 'read -r x rest; echo "$x"; k9s0ke_t3st_cnt_save'
 k9s0ke_t3st_cnt_load
 
-if [ "${POSH_VERSION:-}" ]; then k9s0ke_t3st_skip 1 'posh: set -e ignored in eval'; else
 TTT rc='-ne 0' nl=false errexit=true spec=errexit \
   -- eval 'false; echo XX'
-fi
 TTT out=XX set_pre=+u spec=set+u \
   -- eval 'printf "$T3STNONE"; echo XX' 2>/dev/null
 TTT rc='-ne 0' nl=false set_pre=-u spec=set-u \
