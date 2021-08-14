@@ -65,7 +65,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   local k9s0ke_t3st__l_k
 
   # set defaults
-  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on=${k9s0ke_t3st_g_diff_on:-notok} k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
+  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_todo= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on=${k9s0ke_t3st_g_diff_on:-notok} k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
   local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_g_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=${k9s0ke_t3st_g_errexit:-false} k9s0ke_t3st_arg_set_pre=${k9s0ke_t3st_g_set_pre:-} k9s0ke_t3st_arg_repeat=${k9s0ke_t3st_g_repeat:-1}
 
 
@@ -116,6 +116,8 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
 '${k9s0ke_t3st_arg_hook_test_pre}
   fi
   [ "$k9s0ke_t3st_arg_spec" ] || k9s0ke_t3st_arg_spec="$1"
+  [ -z "$k9s0ke_t3st_arg_todo" ] ||
+    k9s0ke_t3st_arg_spec="$k9s0ke_t3st_arg_spec # TODO : $k9s0ke_t3st_arg_todo"
   if [ -r "$k9s0ke_t3st_tmp_dir"/.t3st.fail ]; then
     case "${k9s0ke_t3st_g_on_fail:-}" in
       bailout)      k9s0ke_t3st_bailout "on_fail = bailout" ;;
