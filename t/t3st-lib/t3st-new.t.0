@@ -8,20 +8,19 @@ set -u
 # uses TTT* defs in t/t3st-ttt0.sh
 TTT__tfile_tests() {  # args: abs-path-to-t-file ...
 
-TTT nl=false todo='add some tests'
+TTT nl=false todo="add some tests to $TTT__tfile_myname"
 
-}
-
-TTT__tfile_redef() {
-  : # redefine TTT__tfile_* if needed
-  # TTT__tfile_setup() { TTT__tfile_setup_mytest "$@"; }
 }
 
 ### script entry point
 
+# makes .t-file usable as library
 TTT__tfile_entry() {  # args: $0 + "$@" from .t invocation
   . "$(dirname -- "$1")"/t3st-lib/t3st-ttt0.sh  # dirname: keep, or it gets ugly
-  TTT__tfile_redef "$@"
+  TTT__tfile_early "$@"
+  # extend / override TTT__tfile_* if needed, e.g.
+  # TTT__tfile_setup() { TTT__tfile_setup_0 "$@"; TTT__tfile_setup_mine "$@"; }
+  # TTT__tfile_thelp() { echo '...'; }
   TTT__tfile_runme "$@"
 }
 

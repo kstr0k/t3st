@@ -9,16 +9,17 @@
 #k9s0ke_t3st_g_errexit=true      # default: false
  k9s0ke_t3st_g_diff_on=ok,notok  # default: notok
 
-# DON'T "optimize" dirname or move into function (gotchas)
+# keep dirname, don't move $0 into function (gotchas)
 # see https://gitlab.com/kstr0k/t3st/-/wikis/shell/dollar0-source
 . "$(dirname -- "$0")"/t3st-lib/k9s0ke_t3st_lib.sh
 
 # TTT prefix: .t-file namespace (arbitrary -- anything convenient)
 # test with default errexit setting
 TTT()   { k9s0ke_t3st_one "$@"; }
-# test with enabled / disabled errexit (regardless of default)
+# test with enabled / disabled / both errexit (regardless of default)
 TTT_ee() { k9s0ke_t3st_one errexit=true  "$@"; }
 TTT_de() { k9s0ke_t3st_one errexit=false "$@"; }
+TTT_xe() { TTT_de "$@"; TTT_ee "$@"; }
 # constants
 TTTnl=$k9s0ke_t3st_nl
 
@@ -37,6 +38,7 @@ TTT nl=false todo='add more tests'
 
 ### END OF TESTS (don't forget to _leave)
 
+# t3st-ttt0 '--help' skips testing, but this is a hello-world
 case "${1:-}" in (--help|-h) cat <<'EOHELP'
 #
 ### Usage:

@@ -6,7 +6,6 @@ set -u
 # TTT = .t file namespace (arbitrary)
 # uses TTT* defs in t/t3st-ttt0.sh
 TTT__tfile_tests() {
-local TTT__tfile_me; TTT__tfile_me=$1; shift
 
 # minimal tests; defaults: rc=0 out='' nl=true infile=/dev/null
 TTT spec='minimal #1, [nl=true]' \
@@ -26,8 +25,8 @@ TTT spec='' nl=false outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}
 TTT spec='' nl=true outfile=/etc/hosts infile=/etc/hosts spec='{outfile,infile}=/etc/hosts, nl=true ignored'
 fi
 
-k9s0ke_t3st_me "$TTT__tfile_me" exec='echo Hello world && false' spec='_me exec='
-k9s0ke_t3st_me "$TTT__tfile_me" spec='_me (.exec)'
+k9s0ke_t3st_me "$TTT__tfile_mypath" exec='echo Hello world && false' spec='_me exec='
+k9s0ke_t3st_me "$TTT__tfile_mypath" spec='_me (.exec)'
 
 TTT rc=2 out=X spec='cmd=eval exit 2' \
   -- eval 'echo X; exit 2'
@@ -77,18 +76,14 @@ TTT spec='# TODO : fails with global k9s0ke_t3st_g_errexit' \
 
 TTT out=Done spec=Done \
   -- echo Done
-
-case "${1:-}" in (--help|-h)
-  shift; TTT__tfile_help "$TTT__tfile_me" ;;  # TODO: pass "$@": posh ${1+"$@"}
-esac
 }
 
 ### script entrypoint
 ### see https://gitlab.com/kstr0k/t3st/-/wikis/shell/dollar0-source
 
 TTT__tfile_entry() {  # args: $0 + "$@" from .t invocation
-  . "$(dirname -- "$1")"/t3st-lib/t3st-ttt0.sh  # DON'T "optimize" dirname (gotchas)
-  # override here if needed
+  . "$(dirname -- "$1")"/t3st-lib/t3st-ttt0.sh  # keep dirname (gotchas)
+  TTT__tfile_early "$@"
   TTT__tfile_runme "$@"
 }
 
