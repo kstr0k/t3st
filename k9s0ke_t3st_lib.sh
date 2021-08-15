@@ -75,6 +75,9 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     [ "$1" != -- ] || { shift; break; }
     k9s0ke_t3st__l_k="${1%%=*}"
     case "$k9s0ke_t3st__l_k" in
+      v:*)
+        k9s0ke_t3st__l_k=_tv_${k9s0ke_t3st__l_k#v:}
+        local "${1#v:}" ;;
       *'+')
         k9s0ke_t3st__l_k=${k9s0ke_t3st__l_k%'+'}
         eval k9s0ke_t3st__l_v="\${k9s0ke_t3st_arg_$k9s0ke_t3st__l_k:-}"
