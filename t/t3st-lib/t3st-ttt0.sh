@@ -34,11 +34,11 @@ TTT__tfile_early_0() {
 TTT__tfile_early() { TTT__tfile_early_0 "$@"; }
 
 TTT__tfile_runme_0() {  # args: $0 + "$@" from .t invocation
-  set -e; TTT__tfile_setup "$@"; set +e
   case "${2:-}" in
     (--help|-h) shift
       TTT__tfile_thelp "$TTT__tfile_mypath"; echo '1..0 # Skipped: help requested' ;;
     (*)
+      set -e; TTT__tfile_setup "$@"; set +e
       k9s0ke_t3st_enter
       TTT__tfile_tests "$@"
       k9s0ke_t3st_leave ;;
