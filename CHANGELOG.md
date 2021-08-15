@@ -1,3 +1,13 @@
+* v0.9.3
+  * add `t3st-ttt0.sh` opinionated framework on top of library
+  * `t3st.t`, `hello-t3st.t`: recommended scaffolding, help
+  * create new tests with `git t3st-new` / `make -C t/ new`
+  * t3st.mk makefile (`t3st-prove` default target)
+  * `k9s0ke_t3st_me`: API changed; new args: `FILE [exec=..] [*=*]..` (removed "`-- ..`")
+  * save test commands; add debug flag to preserve workdir (`..._g_keep_tmp=true`)
+  * add `todo=`... syntactic sugar
+  * auto-skip explicit `errexit=true` if broken (`posh`)
+
 * v0.9.2
   * `git-t3st-setup`: add `t3st` testing to a project with a one-liner
   * `repeat=N` tests, `k9s0ke_t3st_g_repeat` global
