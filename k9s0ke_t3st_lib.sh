@@ -49,12 +49,26 @@ k9s0ke_t3st_bailout() {
   exit 1
 }
 
-k9s0ke_t3st_dump_str() {
-  local _pl
-  if _pl=$(command -v perl 2>/dev/null); then #shellcheck disable=SC2016 # posh: no command -v
-    "$_pl" -wE 'use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; print Dumper( $ARGV[0] )' -- "$@"
-  else printf %s\\n "$@"
-  fi
+k9s0ke_t3st_dump_str_r4() {  # args: str
+  set -- "$*"
+  local escs='s/&/\&amp;/g; s/#/\&num;/g'
+  case "$1" in
+    (*'#'*|*"$k9s0ke_t3st_nl"*|*[![:print]]*)
+      if [ "$k9s0ke_t3st__perl" ]; then #shellcheck disable=SC2016
+        set -- "$("$k9s0ke_t3st__perl" -wE \
+          'use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; $_=$ARGV[0];'"$escs"';print Dumper($_)' -- "$1")"; set -- "${1%\"}"; set -- "${1#\"}"
+      else set -- "$(escs=$escs'; s/"/\\"/g; s/\\/\\\\/g; s/\n/\\n/g; s/'"$k9s0ke_t3st_ch_tab"'/\\t/g; s/[^[:print:]]/\\?/g'; printf '%s\n\n' "$1" |
+        sed -ne '$!H' -e '${ x; s/^\n//;'"$escs"'; p;}')"
+        # ^ on empty final line, accumulated hold is processed, printed
+        # H always prepends \n (so delete 1st)
+      fi ;;
+    (*) ;;
+  esac
+  _R4_k9s0ke_t3st_dump_str=$1
+}
+k9s0ke_t3st_dump_str() {  # args: str
+  k9s0ke_t3st_dump_str_r4 "$@"
+  printf '%s\n' "$_R4_k9s0ke_t3st_dump_str"
 }
 
 k9s0ke_t3st_chk_running() {
@@ -65,7 +79,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   local k9s0ke_t3st__l_k
 
   # set defaults
-  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_todo= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on=${k9s0ke_t3st_g_diff_on:-notok} k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
+  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_specfmt="${k9s0ke_t3st_g_specfmt:-\$1}" k9s0ke_t3st_arg_todo= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on="${k9s0ke_t3st_g_diff_on:-notok}" k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
   local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_g_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=${k9s0ke_t3st_g_errexit:-false} k9s0ke_t3st_arg_set_pre=${k9s0ke_t3st_g_set_pre:-} k9s0ke_t3st_arg_repeat=${k9s0ke_t3st_g_repeat:-1}
 
 
@@ -91,7 +105,11 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   [ $# -gt 0 ] || set -- cat
 
   # process parameters
-  [ "$k9s0ke_t3st_arg_spec" ] || k9s0ke_t3st_arg_spec="$1"
+  if [ -z "$k9s0ke_t3st_arg_spec" ]; then
+    eval "k9s0ke_t3st_arg_spec=\"$k9s0ke_t3st_arg_specfmt\""
+    k9s0ke_t3st_dump_str_r4 "$k9s0ke_t3st_arg_spec"
+    k9s0ke_t3st_arg_spec=$_R4_k9s0ke_t3st_dump_str
+  fi
   [ -z "$k9s0ke_t3st_arg_todo" ] ||
     k9s0ke_t3st_arg_spec="$k9s0ke_t3st_arg_spec # TODO : $k9s0ke_t3st_arg_todo"
   if "$k9s0ke_t3st__broken_eval_sete" && "${k9s0ke_t3st_has_arg_errexit:-false}" && "$k9s0ke_t3st_arg_errexit"; then
@@ -174,15 +192,15 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
 
   # maybe print diff
   (c=${k9s0ke_t3st_arg_diff_on%,},; while [ "$c" ]; do case "${c%%,*}" in
-  ok) !  $ok || exit 0 ;;
-  notok) $ok || exit 0;;
+  (ok) !  $ok || exit 0 ;;
+  (notok) $ok || exit 0;;
   esac; c=${c#*,}; done; false)
   #shellcheck disable=SC2181
   if [ $? -eq 0 ]; then
-    printf '%s%6s out=' '## Expect: rc=' "$k9s0ke_t3st_arg_rc"
-    k9s0ke_t3st_dump_str "$k9s0ke_t3st_arg_out" | tr \\n '|'; echo
-    printf '%s%6s out=' '## Actual: rc=' "$rc"
-    k9s0ke_t3st_dump_str "$out"                 | tr \\n '|'; echo
+    k9s0ke_t3st_dump_str_r4 "$k9s0ke_t3st_arg_out"
+    printf '%s%6s out="%s"\n' '## Expect: rc=' "$k9s0ke_t3st_arg_rc" "$_R4_k9s0ke_t3st_dump_str"
+    k9s0ke_t3st_dump_str_r4 "$out"
+    printf '%s%6s out="%s"\n' '## Actual: rc=' "$rc" "$_R4_k9s0ke_t3st_dump_str"
   fi
 
   if test -s "$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".stderr; then
@@ -255,6 +273,7 @@ k9s0ke_t3st_enter() {  # args: [plan]
   k9s0ke_t3st_tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}"/t3st.XXXXXX)
   k9s0ke_t3st_tmp_cnt=0
   k9s0ke_t3st__broken_eval_sete=$(bad=$(eval 'set -e'; false; echo true); echo "${bad:-false}")
+  k9s0ke_t3st__perl=$(command -v perl || which perl || :)  # posh: no command -v
 
   touch "$k9s0ke_t3st_tmp_dir"/.t3st
   [ -r "$k9s0ke_t3st_tmp_dir"/.t3st ] ||
