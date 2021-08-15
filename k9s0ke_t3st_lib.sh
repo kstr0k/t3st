@@ -51,7 +51,7 @@ k9s0ke_t3st_bailout() {
 
 k9s0ke_t3st_dump_str() {
   local _pl
-  if _pl=$(command -v perl 2>/dev/null); then #shellcheck disable=SC2016
+  if _pl=$(command -v perl 2>/dev/null); then #shellcheck disable=SC2016 # posh: no command -v
     "$_pl" -wE 'use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; print Dumper( $ARGV[0] )' -- "$@"
   else printf %s\\n "$@"
   fi
@@ -78,6 +78,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
       *'+')
         k9s0ke_t3st__l_k=${k9s0ke_t3st__l_k%'+'}
         eval k9s0ke_t3st__l_v="\${k9s0ke_t3st_arg_$k9s0ke_t3st__l_k:-}"
+        # shellcheck disable=SC2154
         local "k9s0ke_t3st_arg_$k9s0ke_t3st__l_k=$k9s0ke_t3st__l_v${1#*=}"
         ;;
       *) local "k9s0ke_t3st_arg_$1" ;;
