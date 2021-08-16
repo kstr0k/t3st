@@ -1,10 +1,17 @@
 #!/bin/sh
 #shellcheck disable=SC1007,SC3043,SC2034
 
-k9s0ke_t3st_nl='
-'
+k9s0ke_t3st_nl=$(printf \\nX); k9s0ke_t3st_nl=${k9s0ke_t3st_nl%X}
 k9s0ke_t3st_ch_newline=$k9s0ke_t3st_nl
+k9s0ke_t3st_ch_cr=$(printf \\rX); k9s0ke_t3st_ch_cr=${k9s0ke_t3st_ch_cr%X}
 k9s0ke_t3st_ch_tab=$(printf \\t)
+k9s0ke_t3st_ch_vtab=$(printf \\v)
+k9s0ke_t3st_ch_ffeed=$(printf \\f)
+k9s0ke_t3st_ch_esc=$(printf \\033)
+k9s0ke_t3st_ch_bell=$(printf \\a)
+k9s0ke_t3st_ch_backspace=$(printf \\b)
+k9s0ke_t3st_ch_del=$(printf \\177)
+k9s0ke_t3st_ch_space=' '
 k9s0ke_t3st_ch_apos="'"
 k9s0ke_t3st_ch_amp='&'
 k9s0ke_t3st_ch_bsol=\\
