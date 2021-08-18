@@ -1,3 +1,8 @@
+* v0.9.4 (unreleased)
+  * `_one()`: add `v:varname=value` (inject vars)
+  * add `specfmt=` and `..._g_specfmt` (default: `'- $1'`, can be `'- $*'`, can use `v:` vars)
+  * faster `dump_str`: call perl only when needed, `sed` alternative (disabled). Impacts `diff` output, test name (with `specfmt='$*'`).
+
 * v0.9.3
   * add `t3st-ttt0.sh` opinionated framework on top of library
   * `t3st.t`, `hello-t3st.t`: recommended scaffolding, help
