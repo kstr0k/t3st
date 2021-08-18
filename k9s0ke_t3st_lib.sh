@@ -56,6 +56,11 @@ k9s0ke_t3st_bailout() {
   exit 1
 }
 
+k9s0ke_t3st_format_str_r4() {
+  _R4_k9s0ke_t3st_format_str=$1; shift
+  eval "_R4_k9s0ke_t3st_format_str=\"$_R4_k9s0ke_t3st_format_str\""
+}
+
 k9s0ke_t3st_dump_str_r4() {  # args: str
   set -- "$*"
   local escs='s/&/\&amp;/g; s/#/\&num;/g'
@@ -86,7 +91,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   local k9s0ke_t3st__l_k
 
   # set defaults
-  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_specfmt="${k9s0ke_t3st_g_specfmt:-\$1}" k9s0ke_t3st_arg_todo= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on="${k9s0ke_t3st_g_diff_on:-notok}" k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
+  local k9s0ke_t3st_arg_spec= k9s0ke_t3st_arg_specfmt="${k9s0ke_t3st_g_specfmt:-- \$1}" k9s0ke_t3st_arg_todo= k9s0ke_t3st_arg_rc=0 k9s0ke_t3st_arg_out= k9s0ke_t3st_arg_nl=true k9s0ke_t3st_arg_cnt=true k9s0ke_t3st_arg_diff_on="${k9s0ke_t3st_g_diff_on:-notok}" k9s0ke_t3st_arg_pp= k9s0ke_t3st_arg_infile=/dev/null k9s0ke_t3st_arg_outfile= k9s0ke_t3st_arg_in=
   local k9s0ke_t3st_arg_hook_test_pre="${k9s0ke_t3st_g_hook_test_pre:-}" k9s0ke_t3st_arg_errexit=${k9s0ke_t3st_g_errexit:-false} k9s0ke_t3st_arg_set_pre=${k9s0ke_t3st_g_set_pre:-} k9s0ke_t3st_arg_repeat=${k9s0ke_t3st_g_repeat:-1}
 
 
@@ -112,11 +117,14 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
   [ $# -gt 0 ] || set -- cat
 
   # process parameters
-  if [ -z "$k9s0ke_t3st_arg_spec" ]; then
-    eval "k9s0ke_t3st_arg_spec=\"$k9s0ke_t3st_arg_specfmt\""
-    k9s0ke_t3st_dump_str_r4 "$k9s0ke_t3st_arg_spec"
-    k9s0ke_t3st_arg_spec=$_R4_k9s0ke_t3st_dump_str
+  if [ -z "$k9s0ke_t3st_arg_spec" ]; then  # build spec using specfmt and $@
+    k9s0ke_t3st_format_str_r4 "$k9s0ke_t3st_arg_specfmt" "$@"
+    k9s0ke_t3st_dump_str_r4 "$_R4_k9s0ke_t3st_format_str"
+  else  # format existing spec according to specfmt (assume valid sting)
+    k9s0ke_t3st_format_str_r4 "$k9s0ke_t3st_arg_specfmt" "$k9s0ke_t3st_arg_spec"
+    _R4_k9s0ke_t3st_dump_str=$_R4_k9s0ke_t3st_format_str  # HACK: skip dump_str
   fi
+  k9s0ke_t3st_arg_spec=$_R4_k9s0ke_t3st_dump_str
   [ -z "$k9s0ke_t3st_arg_todo" ] ||
     k9s0ke_t3st_arg_spec="$k9s0ke_t3st_arg_spec # TODO : $k9s0ke_t3st_arg_todo"
   if "$k9s0ke_t3st__broken_eval_sete" && "${k9s0ke_t3st_has_arg_errexit:-false}" && "$k9s0ke_t3st_arg_errexit"; then
@@ -280,7 +288,7 @@ k9s0ke_t3st_enter() {  # args: [plan]
   k9s0ke_t3st_tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}"/t3st.XXXXXX)
   k9s0ke_t3st_tmp_cnt=0
   k9s0ke_t3st__broken_eval_sete=$(bad=$(eval 'set -e'; false; echo true); echo "${bad:-false}")
-  k9s0ke_t3st__perl=$(command -v perl || which perl || :)  # posh: no command -v
+  k9s0ke_t3st__perl=$(command -v perl 2>/dev/null || which perl 2>/dev/null || :)  # posh: no command -v
 
   touch "$k9s0ke_t3st_tmp_dir"/.t3st
   [ -r "$k9s0ke_t3st_tmp_dir"/.t3st ] ||
