@@ -80,7 +80,7 @@ prove -vr tests  # rename t/, recursive
 
 ### With the `t3st-ttt0` framework
 
-Run `git t3st-new` (or `make -C t/ new`). Rename and edit `new.t` and `new-e.t` (or delete the latter). `new.t` sources [`t/t3st-lib/t3st-ttt0.sh`](t/t3st-lib/t3st-ttt0.sh) and defines a set of tests in `TTT__tfile_tests`; if needed, extend (see below) or replace methods inside `TTT__tfile_entry`. See the [test function](#test-function), now aliased to `TTT`, `TTT_de` / `TTT_ee` and `TTT_xe` (the `_?e` ones for specific `errexit` disable / enable modes; `_xe` calls `TTT_de`, then `TTT_ee` &mdash; it's not a single test).
+Run `git t3st-new` (or `make -C t/ new`). Rename and edit the [generated `new.t`](t/t3st-lib/t3st-new.t.0) and `new-e.t` (or delete the latter). `new.t` sources [`t/t3st-lib/t3st-ttt0.sh`](t/t3st-lib/t3st-ttt0.sh) and defines a set of tests in `TTT__tfile_tests`; if needed, extend (see below) or replace methods inside `TTT__tfile_entry`. See the [test function](#test-function), now aliased to `TTT`, `TTT_de` / `TTT_ee` and `TTT_xe` (the `_?e` ones for specific `errexit` disable / enable modes; `_xe` calls `TTT_de`, then `TTT_ee` &mdash; it's not a single test).
 
 The `*.t` methods (`TTT__tfile_*`, &mdash; a file-wide namespace prefix) receive the absolute path to `*.t` in `"$1"`, followed (where noted) by whatever arguments the test harness supplies (e.g. `prove .. :: ARG..`). You can override them; once `...METHOD` is overridden, you can still access the initial default with the corresponding `..._METHOD_0` (i.e. internally, `...METHOD` simply calls `...METHOD_0`). They are (users are normally concerned with the first three):
 - `..._tests` (in `new.t`): add tests here
@@ -195,6 +195,7 @@ This is also necessary if you call `k9s0ke_t3st_one` from a subshell. If the for
 - `k9s0ke_t3st_bailout [message]`: stop testing, output a TAP bailout marker, exit
 - `k9s0ke_t3st_skip skip_count reason`: mark a few tests as skipped. This keeps the total number of tests constant with conditional tests. The plan (including the final test counter) is printed at the end by default, so this is not required (but helps with debugging).
 - `k9s0ke_t3st_g_on_fail={bailout | skip-rest | ignore-rest }` (*experimental*): bailout or skip / ignore all tests after first (non-TODO) failure
+- `k9s0ke_t3st_g_specfmt` (`- $1` by default): a format string applied to both the implicit and explicit `spec`; set it to `- $*` (and possibly include other variables) to make implicit test names show all `..._one` arguments instead of just `$1`. Double quotes must be escaped within `specfmt`. Also available as a `specfmt=` parameter in `..._one`.
 - `..._one hook_test_pre=...`: code to be `eval`'d before the test command (defaults to `k9s0ke_t3st_g_hook_test_pre`, or empty). The framework adds additional code to this hook (`errexit` / `set_pre` setup, redirects).
 - `..._one diff_on={ ok, | notok, }*`: print actual vs expected results (as TAP "# ..." comments) for some tests. The default is `notok`, or `$k9s0ke_t3st_g_diff_on` if defined. Use '`=ok,notok`' to print all diffs or '`=,`' to print none.
 - `..._one` supports key+=value arguments (which append to previous values, or the default). For example, you can have a `TTT_myfun` wrapper which calls `..._one` including a `spec=` argument, then call `TTT_myfun spec+='...'`
