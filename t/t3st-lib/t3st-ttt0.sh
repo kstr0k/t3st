@@ -37,6 +37,10 @@ TTT__tfile_runme_0() {  # args: .t invocation
   case "${1:-}" in
     (--help|-h) shift
       TTT__tfile_thelp "$@"; echo '1..0 # Skipped: help requested' ;;
+    (--t3st-shell=*) local sh; sh="${1#*=}"; shift
+      eval exec "$sh" '"$TTT__tfile_mypath" "$@"' ;;
+    (--t3st-eval=*) eval "${1#*=}"; shift
+      TTT__tfile_runme "$@" ;;
     (*)
       set -e; TTT__tfile_setup "$@"; set +e
       k9s0ke_t3st_enter
