@@ -28,8 +28,6 @@ EOHELP
 TTT__tfile_thelp() { TTT__tfile_thelp_0 ${1+"$@"}; }
 
 TTT__tfile_early_0() {  # args: $0 + .t invocation
-  TTT__tfile_mypath=$1; shift
-  case "$TTT__tfile_mypath" in (/*) ;; (*) TTT__tfile_mypath=$PWD/$TTT__tfile_mypath ;; esac
   TTT__tfile_myname=${TTT__tfile_mypath##*/}
   TTT__tfile_mydirn=${TTT__tfile_mypath%/*}; TTT__tfile_mydirn=${TTT__tfile_mydirn:-/}
 }
