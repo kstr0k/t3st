@@ -81,9 +81,11 @@ TTT out=Done spec=Done \
 ### script entrypoint
 ### see https://gitlab.com/kstr0k/t3st/-/wikis/shell/dollar0-source
 
-TTT__tfile_entry() {  # args: $0 + "$@" from .t invocation
-  . "$(dirname -- "$1")"/t3st-lib/t3st-ttt0.sh  # keep dirname (gotchas)
-  TTT__tfile_early "$@"
+TTT__tfile_entry() {  # args: $0 + .t invocation
+  TTT__tfile_mypath=$1
+  case "$TTT__tfile_mypath" in (/*) ;; (*) TTT__tfile_mypath=${PWD%/}/$TTT__tfile_mypath ;; esac
+  . "${TTT__tfile_mypath%/*}"/t3st-lib/t3st-ttt0.sh
+  TTT__tfile_early "$@"; shift
   TTT__tfile_runme "$@"
 }
 
