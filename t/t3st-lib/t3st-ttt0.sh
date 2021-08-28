@@ -33,21 +33,31 @@ TTT__tfile_early_0() {  # args: $0 + .t invocation
 }
 TTT__tfile_early() { TTT__tfile_early_0 ${1+"$@"}; }
 
-TTT__tfile_runme_0() {  # args: .t invocation
+TTT__tfile_parse_args_end_0() {
+  set -e; TTT__tfile_setup ${1+"$@"}; set +e
+  k9s0ke_t3st_enter
+  TTT__tfile_tests ${1+"$@"}
+  k9s0ke_t3st_leave
+}
+TTT__tfile_parse_args_end() { TTT__tfile_parse_args_end_0 ${1+"$@"}; }
+
+TTT__tfile_parse_args_0() {
   case "${1:-}" in
     (--help|-h) shift
       TTT__tfile_thelp ${1+"$@"}; echo '1..0 # Skipped: help requested' ;;
     (--t3st-shell=*) local sh; sh="${1#*=}"; shift
       eval exec "$sh" '"$TTT__tfile_mypath" ${1+"$@"}' ;;
     (--t3st-eval=*) eval "${1#*=}"; shift
-      TTT__tfile_runme ${1+"$@"} ;;
+      TTT__tfile_parse_args ${1+"$@"} ;;
     (--) shift
-      TTT__tfile_runme ${1+"$@"} ;;
+      TTT__tfile_parse_args_end ${1+"$@"} ;;
     (*)
-      set -e; TTT__tfile_setup ${1+"$@"}; set +e
-      k9s0ke_t3st_enter
-      TTT__tfile_tests ${1+"$@"}
-      k9s0ke_t3st_leave ;;
+      TTT__tfile_parse_args_end ${1+"$@"} ;;
   esac
+}
+TTT__tfile_parse_args() { TTT__tfile_parse_args_0 ${1+"$@"}; }
+
+TTT__tfile_runme_0() {  # args: .t invocation
+  TTT__tfile_parse_args ${1+"$@"};
 }
 TTT__tfile_runme() { TTT__tfile_runme_0 ${1+"$@"}; }
