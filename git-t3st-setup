@@ -77,7 +77,7 @@ setup_git() {
   [ "$_O_tdir" ] || { echo 1>&2 'Not setting up a t/ dir'; return 0; }
   git config t3st.prove-shells >/dev/null ||
     setx git config t3st.prove-shells 'sh,bash,busybox sh#,yash,mksh,dash,bash --posix,bash44,bash32,zsh,zsh --emulate sh,zsh --emulate ksh,posh'
-  setx git config alias.t3st-prove '!f(){ local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; eval "$sh -c exit" 2>/dev/null || continue; printf "\n# shell = %s\n\n" "$sh"; prove -e "$sh" "$@" "$(git config t3st.tdir)"; done; }; f'
+  setx git config alias.t3st-prove '!f(){ local tdir; tdir=$(git config t3st.tdir) && cd "$tdir" || exit 1; local shs sh; shs=$(git config t3st.prove-shells); shs=${shs%%#*}","; while [ "$shs" ] ; do sh=${shs%%,*}; shs=${shs#*,}; [ "$sh" ] || continue; eval "$sh -c exit" 2>/dev/null || continue; printf "\n# shell = %s\n\n" "$sh"; prove . -e "$sh" "$@"; done; }; f'
   setx git config alias.t3st-setup '!f(){ git fetch --no-tags -v kstr0k-t3st || echo 1>&2 '\'''\''; git show kstr0k-t3st/'"$_O_t3st_branch"':git-t3st-setup | sh -s -- --no-fetch "$@"; }; f'
   setx git config alias.t3st-new '!f(){ make -C "$(git config t3st.tdir)" -f t3st.mk new; }; f'
   echo 1>&2 'Added git aliases t3st-*'
