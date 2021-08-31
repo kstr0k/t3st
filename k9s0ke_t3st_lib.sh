@@ -63,16 +63,19 @@ k9s0ke_t3st_format_str_r4() {
 
 k9s0ke_t3st_dump_str_r4() {  # args: str
   set -- "$*"
-  local escs='s/&/\&amp;/g; s/#/\&num;/g'
-  case "$1" in
+  local escs='s/#/\\043/g'  # both perl & sed: escape '#'
+  case "$1" in  # simple strings need no escaping
     (*'#'*|*"$k9s0ke_t3st_nl"*|*[![:print]]*)
       if [ "$k9s0ke_t3st__perl" ]; then #shellcheck disable=SC2016
         set -- "$("$k9s0ke_t3st__perl" -wE \
-          'use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1; $_=$ARGV[0];'"$escs"';print Dumper($_)' -- "$1")"; set -- "${1%\"}"; set -- "${1#\"}"
-      else set -- "$(escs=$escs'; s/"/\\"/g; s/\\/\\\\/g; s/\n/\\n/g; s/'"$k9s0ke_t3st_ch_tab"'/\\t/g; s/[^[:print:]]/\\?/g'; printf '%s\n\n' "$1" |
-        sed -ne '$!H' -e '${ x; s/^\n//;'"$escs"'; p;}')"
-        # ^ on empty final line, accumulated hold is processed, printed
-        # H always prepends \n (so delete 1st)
+          'use Data::Dumper; $Data::Dumper::Useqq=1; $Data::Dumper::Terse=1;
+$_=Dumper( $ARGV[0] );'"$escs"'; print' -- "$1")"
+        set -- "${1%\"}"; set -- "${1#\"}"  # unquote Dumper result
+      else  # no perl / disabled in env
+        set -- "$(
+          escs='s/\\/\\\\/g; '"$escs"'; s/"/\\"/g; s/\n/\\n/g; s/'"$k9s0ke_t3st_ch_tab"'/\\t/g; s/[^[:print:]]/\\?/g'
+          printf '%s\n\n' "$1" | sed -ne '$!H' -e '${ x; s/^\n//;'"$escs"'; p;}')"
+          # ^ non-final lines: hold; final: accumulator processed, printed (H prepends \n's; delete)
       fi ;;
     (*) ;;
   esac
@@ -222,7 +225,7 @@ k9s0ke_t3st_one() { # args: kw1=val1 kw2='val 2' ... -- cmd...
     local _rl=
     while IFS= read -r _rl; do printf '# %s\n' "$_rl"; done \
       <"$k9s0ke_t3st_tmp_dir"/.t3st."$k9s0ke_t3st_cnt".stderr
-    [ -z "$_rl" ] || printf '# %s\n' "$_rl"  #'\ no final newline'
+    [ -z "$_rl" ] || printf '# %s\n' "$_rl"  #'\ no final \n'
   fi
 
   # cleanup, prepare next test
@@ -287,8 +290,10 @@ k9s0ke_t3st_enter() {  # args: [plan]
   k9s0ke_t3st_cnt=0
   k9s0ke_t3st_tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}"/t3st.XXXXXX)
   k9s0ke_t3st_tmp_cnt=0
+
   k9s0ke_t3st__broken_eval_sete=$(bad=$(eval 'set -e'; false; echo true); echo "${bad:-false}")
-  k9s0ke_t3st__perl=$(command -v perl 2>/dev/null || which perl 2>/dev/null || :)  # posh: no command -v
+  # set k9s0ke_t3st__perl='' in the env to force (faster) sed
+  : "${k9s0ke_t3st__perl:=$(command -v perl 2>/dev/null || which perl 2>/dev/null || :)}"  # posh: no command -v
 
   touch "$k9s0ke_t3st_tmp_dir"/.t3st
   [ -r "$k9s0ke_t3st_tmp_dir"/.t3st ] ||
