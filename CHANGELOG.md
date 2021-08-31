@@ -1,7 +1,7 @@
-* v0.9.4 (unreleased)
-  * `_one()`: add `v:varname=value` (inject vars)
+* v0.9.4
+  * clarify `ttt0`, add overridable methods (including `_parse_args`); add `--t3st-shell`, `--t3st-eval` (tests can be reconfigured using only `prove :: ARGS..`)
   * add `specfmt=` and `..._g_specfmt` (default: `'- $1'`, can be `'- $*'`, can use `v:` vars)
-  * faster `dump_str`: call perl only when needed, `sed` alternative (disabled). Impacts `diff` output, test name (with `specfmt='$*'`).
+  * faster `dump_str`: call perl only when needed, `sed` alternative if no `perl` found / `k9s0ke_t3st__perl = ''`. Impacts `diff` output, test name (with `specfmt='$*'`).
 
 * v0.9.3
   * add `t3st-ttt0.sh` opinionated framework on top of library
